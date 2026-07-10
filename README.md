@@ -20,11 +20,11 @@ adb shell /data/local/tmp/rusda-server
 
 ## 自动构建
 
-推送 tag 自动触发 CI 构建并发布：
+推送 tag 自动触发 CI 构建并发布（版本号与 frida 一致，不带 v 前缀）：
 
 ```bash
-git tag v17.15.4
-git push origin v17.15.4
+git tag 17.15.4
+git push origin 17.15.4
 ```
 
 ## 修改内容
@@ -84,8 +84,8 @@ rusda/
 
 1. 修改补丁（如需要）
 2. 提交到 main
-3. `git tag v<frida版本>`
-4. `git push origin v<frida版本>`
+3. `git tag <frida版本>`（如 `17.15.4`）
+4. `git push origin <frida版本>`
 5. CI 自动构建并发布
 
 ## License

@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
+      - '[0-9]*'  # 匹配纯数字开头的 tag，如 17.15.4
 
 permissions:
   contents: write
@@ -22,7 +22,7 @@ jobs:
       - name: Extract version from tag
         id: version
         run: |
-          TAG=${GITHUB_REF#refs/tags/v}
+          TAG=${GITHUB_REF#refs/tags/}
           echo "version=$TAG" >> $GITHUB_OUTPUT
           echo "Building for Frida version: $TAG"
 

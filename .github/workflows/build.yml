@@ -37,9 +37,11 @@ jobs:
         run: pip install lief
 
       - name: Setup Android NDK
-        uses: nhatsang/setup-ndk@v1
-        with:
-          ndk-version: r29
+        run: |
+          wget -q https://dl.google.com/android/repository/android-ndk-r29-linux.zip -O /tmp/ndk.zip
+          unzip -q /tmp/ndk.zip -d /tmp
+          echo "ANDROID_NDK_ROOT=/tmp/android-ndk-r29" >> $GITHUB_ENV
+          rm /tmp/ndk.zip
 
       - name: Clone Frida source
         run: |

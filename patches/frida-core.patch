@@ -494,11 +494,11 @@ index 4d0cd49f..c057da29 100644
      except subprocess.CalledProcessError as e:
          print(e, file=sys.stderr)
          print("Output:\n\t| " + "\n\t| ".join(e.output.strip().split("\n")), file=sys.stderr)
-diff --git a/home/work/projects/adb_test/rusda/frida-src/subprojects/frida-core/lib/base/obfuscate.vala b/home/work/projects/adb_test/rusda/frida-src/subprojects/frida-core/lib/base/obfuscate.vala
+diff --git a/lib/base/obfuscate.vala b/lib/base/obfuscate.vala
 new file mode 100644
 index 00000000..fbed1d29
 --- /dev/null
-+++ b/home/work/projects/adb_test/rusda/frida-src/subprojects/frida-core/lib/base/obfuscate.vala
++++ b/lib/base/obfuscate.vala
 @@ -0,0 +1,25 @@
 +namespace Frida {
 +	/**
@@ -525,11 +525,11 @@ index 00000000..fbed1d29
 +		}
 +	}
 +}
-diff --git a/home/work/projects/adb_test/rusda/frida-src/subprojects/frida-core/src/topatch.py b/home/work/projects/adb_test/rusda/frida-src/subprojects/frida-core/src/topatch.py
+diff --git a/src/topatch.py b/src/topatch.py
 new file mode 100644
 index 00000000..96479c21
 --- /dev/null
-+++ b/home/work/projects/adb_test/rusda/frida-src/subprojects/frida-core/src/topatch.py
++++ b/src/topatch.py
 @@ -0,0 +1,80 @@
 +import lief
 +import sys

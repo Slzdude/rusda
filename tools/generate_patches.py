@@ -422,14 +422,13 @@ def generate_patches(frida_core_dir, output_dir):
         nf_path = d / nf
         if nf_path.exists():
             add_result = subprocess.run(
-                ["git", "diff", "--no-index", "/dev/null", str(nf_path)],
+                ["git", "diff", "--no-index", "--", "/dev/null", nf],
                 cwd=d,
                 capture_output=True,
                 text=True
             )
-            # 修正路径
-            diff_text = add_result.stdout.replace(f"b/{nf_path}", f"b/{nf}")
-            result.stdout += diff_text
+            # 直接使用相对路径，不需要修正
+            result.stdout += add_result.stdout
 
     # 保存补丁
     patch_file = out / "frida-core.patch"

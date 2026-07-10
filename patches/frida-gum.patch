@@ -7,7 +7,7 @@ index 58e83a9..b838544 100644
    gum_do_init ();
  
 -  g_set_prgname ("frida");
-+  g_set_prgname ("russell");
++  g_set_prgname ("rusda");
  
  #if defined (HAVE_LINUX) && defined (HAVE_GLIBC)
    gum_libdl_prevent_unload ();

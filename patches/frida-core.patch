@@ -433,14 +433,14 @@ index 6154034..eed80a5 100644
      g_io_module_openssl_register ();
  #endif
  
-+    g_set_prgname ("russell");
++    g_set_prgname ("rusda");
 +
      if (runtime == FRIDA_RUNTIME_OTHER)
      {
        main_context = g_main_context_ref (g_main_context_default ());
        main_loop = g_main_loop_new (main_context, FALSE);
 -      main_thread = g_thread_new ("frida-main-loop", run_main_loop, NULL);
-+      main_thread = g_thread_new ("rusda-main-loop", run_main_loop, NULL);
++      main_thread = g_thread_new ("rusda-loop", run_main_loop, NULL);
      }
  
      g_once_init_leave (&frida_initialized, TRUE);
@@ -508,7 +508,13 @@ index 0000000..0f499d5
 +import lief
 +import sys
 +import random
++import string
 +import os
++
++
++def random_alpha(length: int) -> str:
++    """生成随机纯字母字符串"""
++    return ''.join(random.choices(string.ascii_lowercase, k=length))
 +
 +
 +def log_color(msg):
@@ -521,28 +527,31 @@ index 0000000..0f499d5
 +    log_color(f"[*] Patch frida-agent: {input_file}")
 +    binary = lief.parse(input_file)
 +
-+    random_name = "rusda"
-+    log_color(f"[*] Patch `frida` to `{random_name}`")
++    # 随机生成品牌名（5字母，等长替换 frida）
++    brand = random_alpha(5)
++    log_color(f"[*] Patch `frida` to `{brand}`")
 +
 +    if not binary:
 +        log_color(f"[*] Not ELF, exit")
 +        sys.exit(1)
 +    else:
++        # 符号表替换
 +        for symbol in binary.symbols:
 +            if symbol.name == "frida_agent_main":
 +                symbol.name = "main"
 +            if "frida" in symbol.name:
-+                symbol.name = symbol.name.replace("frida", random_name)
++                symbol.name = symbol.name.replace("frida", brand)
 +            if "FRIDA" in symbol.name:
-+                symbol.name = symbol.name.replace("FRIDA", random_name.upper())
++                symbol.name = symbol.name.replace("FRIDA", brand.upper())
 +
-+        all_patch_string = ["FridaScriptEngine", "GLib-GIO", "GDBusProxy", "GumScript"]  # 字符串特征修改 尽量与源字符一样
++        # .rodata 字符串反转
++        all_patch_string = ["FridaScriptEngine", "GLib-GIO", "GDBusProxy", "GumScript"]
 +
 +        for section in binary.sections:
 +            if section.name != ".rodata":
 +                continue
 +            for patch_str in all_patch_string:
-+                addr_all = section.search_all(patch_str)  # Patch 内存字符串
++                addr_all = section.search_all(patch_str)
 +
 +                for addr in addr_all:
 +                    patch = [ord(n) for n in list(patch_str)[::-1]]
@@ -552,27 +561,27 @@ index 0000000..0f499d5
 +
 +        binary.write(input_file)
 +
-+        # thread_gum_js_loop
-+        random_name = "russellloop"
-+        log_color(f"[*] Patch `gum-js-loop` to `{random_name}`")
-+        os.system(f"sed -b -i s/gum-js-loop/{random_name}/g {input_file}")
++        # 线程名替换（随机生成，等长替换）
++        thread_gum_js_loop = random_alpha(11)  # gum-js-loop = 11字符
++        log_color(f"[*] Patch `gum-js-loop` to `{thread_gum_js_loop}`")
++        os.system(f"sed -b -i s/gum-js-loop/{thread_gum_js_loop}/g {input_file}")
 +
-+        random_name = "rmain"
-+        log_color(f"[*] Patch `gmain` to `{random_name}`")
-+        os.system(f"sed -b -i s/gmain/{random_name}/g {input_file}")
++        thread_gmain = random_alpha(5)  # gmain = 5字符
++        log_color(f"[*] Patch `gmain` to `{thread_gmain}`")
++        os.system(f"sed -b -i s/gmain/{thread_gmain}/g {input_file}")
 +
-+        random_name = "rubus"
-+        log_color(f"[*] Patch `gdbus` to `{random_name}`")
-+        os.system(f"sed -b -i s/gdbus/{random_name}/g {input_file}")
++        thread_gdbus = random_alpha(5)  # gdbus = 5字符
++        log_color(f"[*] Patch `gdbus` to `{thread_gdbus}`")
++        os.system(f"sed -b -i s/gdbus/{thread_gdbus}/g {input_file}")
 +
 +        # 注：frida-gadget 不可全局 sed，会破坏 injector 的 frida-gadget-tcp- 匹配；gadget.glue 线程名已由 gadget.vala Obfuscate 处理
 +
-+        # 仅做 rusda 式二进制 patch，不改协议（re.frida.*、frida:rpc 等），保证与标准 frida 客户端兼容
++        # 仅做二进制 patch，不改协议（re.frida.*、frida:rpc 等），保证与标准 frida 客户端兼容
 +
 +        # SONAME 残留特征：libfrida-gadget-raw.so / libfrida-agent-raw.so
-+        # 等长替换（frida->rusda 均 5 字节），不改变 ELF 结构，安全。issue #9 (fh2002)
++        # 等长替换（frida->brand 均 5 字节），不改变 ELF 结构，安全
 +        for raw_name in ["libfrida-gadget-raw", "libfrida-agent-raw"]:
-+            new_raw = raw_name.replace("frida", "rusda")
++            new_raw = raw_name.replace("frida", brand)
 +            log_color(f"[*] Patch `{raw_name}` to `{new_raw}`")
 +            os.system(f"sed -b -i s/{raw_name}/{new_raw}/g {input_file}")
 +        log_color(f"[*] Patch Finish")

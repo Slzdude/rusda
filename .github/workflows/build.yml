@@ -11,9 +11,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch: [arm, arm64, x86, x86_64]
 
     steps:
       - name: Checkout rusda
@@ -82,7 +79,7 @@ jobs:
           cd build
           ../configure \
             --prefix=$(pwd)/../dist/staging \
-            --host=android-${{ matrix.arch }} \
+            --host=android-arm64 \
             --enable-server \
             --enable-gadget \
             --enable-inject \
@@ -94,7 +91,7 @@ jobs:
         working-directory: frida-src
         run: |
           VERSION=${{ steps.version.outputs.version }}
-          ARCH=${{ matrix.arch }}
+          ARCH=arm64
           STAGING=dist/staging
           OUTPUT=dist/output
           mkdir -p $OUTPUT
@@ -129,7 +126,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{ matrix.arch }}
+          name: artifacts-arm64
           path: frida-src/dist/output/*.xz
 
   release:

@@ -6,11 +6,15 @@
 
 ## 下载
 
-到 [Releases](https://github.com/Slzdude/rusda/releases) 下载，每个版本包含四架构产物：
-- `arm` / `arm64` / `x86` / `x86_64`
-- `server` / `inject` / `gadget` / `compiler`
+到 [Releases](https://github.com/Slzdude/rusda/releases) 下载，包含以下组件：
+- `rusda-server` - 主服务
+- `rusda-inject` - 注入工具
+- `rusda-gadget` - 嵌入式 agent
+- `rusda-compiler` - 脚本编译器
 
-产物命名：`rusda-{server,inject,gadget,compiler}-<版本>-android-<架构>(.so).xz`
+仅提供 **arm64** 架构（现代 Android 设备均为 64 位）。
+
+客户端（`frida`/`frida-tools`）使用官方版本即可，协议完全兼容。
 
 ```bash
 xz -d rusda-server-*-android-arm64.xz

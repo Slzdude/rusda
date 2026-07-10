@@ -16,7 +16,7 @@ SRC_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUTPUT_DIR="${SRC_ROOT}/dist-android"
 
 # 可用架构列表
-ALL_ARCHS="x86 x86_64 arm arm64"
+ALL_ARCHS="arm64"
 
 # 颜色输出
 RED='\033[0;31m'

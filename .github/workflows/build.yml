@@ -49,27 +49,11 @@ jobs:
             https://github.com/frida/frida frida-src
 
       - name: Apply patches
-        working-directory: frida-src
-        run: |
-          # Apply superrepo patch
-          git apply --exclude=releng ${{ github.workspace }}/patches/superrepo.patch
-
-          # Apply frida-core patch
-          cd subprojects/frida-core
-          git apply ${{ github.workspace }}/patches/frida-core.patch
-          cd ../..
-
-          # Apply frida-gum patch
-          cd subprojects/frida-gum
-          git apply ${{ github.workspace }}/patches/frida-gum.patch
+        run: python ${{ github.workspace }}/tools/apply_patches.py frida-src
 
       - name: Install compiler dependencies
         working-directory: frida-src/subprojects/frida-core/src/compiler
         run: npm install
-
-      - name: Randomize sources
-        working-directory: frida-src
-        run: python ${{ github.workspace }}/tools/randomize_sources.py .
 
       - name: Build
         working-directory: frida-src

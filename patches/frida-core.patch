@@ -1,22 +1,12 @@
-diff --git a/.gitignore b/.gitignore
-index b366e10..1307f24 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -19,3 +19,5 @@
- /src/linux/helpers/build/
- /src/linux/helpers/ext/
- /subprojects/*
-+*.deps
-+*.vapi
 diff --git a/compat/build.py b/compat/build.py
-index 556f34b..d37913d 100644
+index 556f34b3..08f4b2bb 100644
 --- a/compat/build.py
 +++ b/compat/build.py
 @@ -238,28 +238,28 @@ def setup(role: Role,
                  if "helper" in components:
                      outputs[group] += [
                          Output(identifier=f"helper_{kind}",
--                               name=f"__BRAND__-helper-{other_arch}",
+-                               name=f"frida-helper-{other_arch}",
 +                               name=f"__BRAND__-helper-{other_arch}",
                                 file=HELPER_FILE_UNIX,
                                 target=HELPER_TARGET),
@@ -24,7 +14,7 @@ index 556f34b..d37913d 100644
                  if "agent" in components:
                      outputs[group] += [
                          Output(identifier=f"agent_{kind}",
--                               name=f"__BRAND__-agent-{other_arch}.dylib",
+-                               name=f"frida-agent-{other_arch}.dylib",
 +                               name=f"__BRAND__-agent-{other_arch}.dylib",
                                 file=AGENT_FILE_DARWIN,
                                 target=AGENT_TARGET),
@@ -32,7 +22,7 @@ index 556f34b..d37913d 100644
                  if "gadget" in components:
                      outputs[group] += [
                          Output(identifier=f"gadget_{kind}",
--                               name=f"__BRAND__-gadget-{other_arch}.dylib",
+-                               name=f"frida-gadget-{other_arch}.dylib",
 +                               name=f"__BRAND__-gadget-{other_arch}.dylib",
                                 file=GADGET_FILE_DARWIN,
                                 target=GADGET_TARGET),
@@ -40,7 +30,7 @@ index 556f34b..d37913d 100644
                  if "server" in components and assets == "installed":
                      outputs[group] += [
                          Output(identifier=f"server_{kind}",
--                               name=f"__BRAND__-server-{other_arch}",
+-                               name=f"frida-server-{other_arch}",
 +                               name=f"__BRAND__-server-{other_arch}",
                                 file=SERVER_FILE_UNIX,
                                 target=SERVER_TARGET),
@@ -49,7 +39,7 @@ index 556f34b..d37913d 100644
              if host_os == "android" and host_arch in {"x86_64", "x86"} and "agent" in components:
                  outputs[OutputGroup("arm")] = [
                      Output(identifier="agent_emulated_legacy",
--                           name="__BRAND__-agent-arm.so",
+-                           name="frida-agent-arm.so",
 +                           name="__BRAND__-agent-arm.so",
                             file=AGENT_FILE_ELF,
                             target=AGENT_TARGET),
@@ -57,7 +47,7 @@ index 556f34b..d37913d 100644
                  if host_arch == "x86_64":
                      outputs[OutputGroup("arm64")] = [
                          Output(identifier="agent_emulated_modern",
--                               name="__BRAND__-agent-arm64.so",
+-                               name="frida-agent-arm64.so",
 +                               name="__BRAND__-agent-arm64.so",
                                 file=AGENT_FILE_ELF,
                                 target=AGENT_TARGET),
@@ -65,51 +55,51 @@ index 556f34b..d37913d 100644
 @@ -802,21 +802,21 @@ OVERRIDDEN_COMPAT_OPTIONS = {
  }
  
- HELPER_TARGET = "__BRAND__-helper"
--HELPER_FILE_WINDOWS = Path("src") / "__BRAND__-helper.exe"
--HELPER_FILE_UNIX = Path("src") / "__BRAND__-helper"
+ HELPER_TARGET = "frida-helper"
+-HELPER_FILE_WINDOWS = Path("src") / "frida-helper.exe"
+-HELPER_FILE_UNIX = Path("src") / "frida-helper"
 +HELPER_FILE_WINDOWS = Path("src") / "__BRAND__-helper.exe"
 +HELPER_FILE_UNIX = Path("src") / "__BRAND__-helper"
  
- AGENT_TARGET = "__BRAND__-agent"
--AGENT_FILE_WINDOWS = Path("lib") / "agent" / "__BRAND__-agent.dll"
--AGENT_FILE_DARWIN = Path("lib") / "agent" / "__BRAND__-agent.dylib"
--AGENT_FILE_ELF = Path("lib") / "agent" / "__BRAND__-agent.so"
+ AGENT_TARGET = "frida-agent"
+-AGENT_FILE_WINDOWS = Path("lib") / "agent" / "frida-agent.dll"
+-AGENT_FILE_DARWIN = Path("lib") / "agent" / "frida-agent.dylib"
+-AGENT_FILE_ELF = Path("lib") / "agent" / "frida-agent.so"
 +AGENT_FILE_WINDOWS = Path("lib") / "agent" / "__BRAND__-agent.dll"
 +AGENT_FILE_DARWIN = Path("lib") / "agent" / "__BRAND__-agent.dylib"
 +AGENT_FILE_ELF = Path("lib") / "agent" / "__BRAND__-agent.so"
  
- GADGET_TARGET = "__BRAND__-gadget"
--GADGET_FILE_WINDOWS = Path("lib") / "gadget" / "__BRAND__-gadget.dll"
--GADGET_FILE_DARWIN = Path("lib") / "gadget" / "__BRAND__-gadget.dylib"
--GADGET_FILE_ELF = Path("lib") / "gadget" / "__BRAND__-gadget.so"
+ GADGET_TARGET = "frida-gadget"
+-GADGET_FILE_WINDOWS = Path("lib") / "gadget" / "frida-gadget.dll"
+-GADGET_FILE_DARWIN = Path("lib") / "gadget" / "frida-gadget.dylib"
+-GADGET_FILE_ELF = Path("lib") / "gadget" / "frida-gadget.so"
 +GADGET_FILE_WINDOWS = Path("lib") / "gadget" / "__BRAND__-gadget.dll"
 +GADGET_FILE_DARWIN = Path("lib") / "gadget" / "__BRAND__-gadget.dylib"
 +GADGET_FILE_ELF = Path("lib") / "gadget" / "__BRAND__-gadget.so"
  
- SERVER_TARGET = "__BRAND__-server"
--SERVER_FILE_UNIX = Path("server") / "__BRAND__-server"
+ SERVER_TARGET = "frida-server"
+-SERVER_FILE_UNIX = Path("server") / "frida-server"
 +SERVER_FILE_UNIX = Path("server") / "__BRAND__-server"
  
  MSVS_ENVVARS = {
      "PLATFORM",
 diff --git a/inject/meson.build b/inject/meson.build
-index 713c731..240ca2d 100644
+index 713c731c..d18c52d4 100644
 --- a/inject/meson.build
 +++ b/inject/meson.build
-@@ -17,8 +17,8 @@ raw_inject = executable('__BRAND__-inject-raw', inject_sources,
+@@ -17,8 +17,8 @@ raw_inject = executable('frida-inject-raw', inject_sources,
  
- custom_target('__BRAND__-inject',
-   input: [raw_inject, '__BRAND__-inject.xcent'],
--  output: '__BRAND__-inject' + exe_suffix,
--  command: post_process + ['executable', 're.__BRAND__.Inject', '@INPUT1@'],
+ custom_target('frida-inject',
+   input: [raw_inject, 'frida-inject.xcent'],
+-  output: 'frida-inject' + exe_suffix,
+-  command: post_process + ['executable', 're.frida.Inject', '@INPUT1@'],
 +  output: '__BRAND__-inject' + exe_suffix,
 +  command: post_process + ['executable', 're.__BRAND__.Inject', '@INPUT1@'],
    install: true,
    install_dir: get_option('bindir'),
  )
 diff --git a/lib/agent/agent.vala b/lib/agent/agent.vala
-index f99f31f..3449f4a 100644
+index f99f31f5..3449f4af 100644
 --- a/lib/agent/agent.vala
 +++ b/lib/agent/agent.vala
 @@ -363,7 +363,7 @@ namespace Frida.Agent {
@@ -143,13 +133,13 @@ index f99f31f..3449f4a 100644
  
  				emulated_bridge_state = new BridgeState (parameters.str);
  
--				emulated_worker = new Thread<void> ("__BRAND__-agent-emulated", run_emulated_agent);
+-				emulated_worker = new Thread<void> ("frida-agent-emulated", run_emulated_agent);
 +				emulated_worker = new Thread<void> (Obfuscate.decode_hex_xor ("33273c3134783432303b21783038203934213031"), run_emulated_agent);
  
  				var connection = yield new DBusConnection (stream, ServerGuid.HOST_SESSION_SERVICE,
  					AUTHENTICATION_SERVER | AUTHENTICATION_ALLOW_ANONYMOUS, null, cancellable);
 diff --git a/lib/base/linux.vala b/lib/base/linux.vala
-index 6e915e5..2fcfe2f 100644
+index 6e915e5d..2fcfe2f9 100644
 --- a/lib/base/linux.vala
 +++ b/lib/base/linux.vala
 @@ -124,7 +124,7 @@ namespace Frida {
@@ -162,7 +152,7 @@ index 6e915e5..2fcfe2f 100644
  	}
  
 diff --git a/lib/base/meson.build b/lib/base/meson.build
-index 10eb920..ca7bb74 100644
+index 10eb9201..ca7bb742 100644
 --- a/lib/base/meson.build
 +++ b/lib/base/meson.build
 @@ -5,6 +5,7 @@ base_sources = [
@@ -173,39 +163,8 @@ index 10eb920..ca7bb74 100644
    'rpc.vala',
    'p2p.vala',
    'p2p-glue.c',
-diff --git a/lib/base/obfuscate.vala b/lib/base/obfuscate.vala
-new file mode 100644
-index 0000000..5665e80
---- /dev/null
-+++ b/lib/base/obfuscate.vala
-@@ -0,0 +1,25 @@
-+namespace Frida {
-+	/**
-+	 * 运行时解码特征字符串，避免二进制中出现 frida 相关字面量，规避内存扫描。
-+	 * 支持 XOR / Base58 等编码，可替换实现。
-+	 */
-+	namespace Obfuscate {
-+		private const uint8 XOR_KEY = 0x55;
-+
-+		/**
-+		 * 从 hex 编码的 XOR 密文解码字符串。
-+		 * 编译期仅保留 hex 字面量，运行时还原真实字符串。
-+		 */
-+		public static string decode_hex_xor (string hex) {
-+			var len = hex.length / 2;
-+			var sb = new StringBuilder.sized (len);
-+			for (var i = 0; i < len; i++) {
-+				int64 val;
-+				int64.try_parse (hex.substring (i * 2, 2), out val, null, 16);
-+				var b = (uint8) val;
-+				sb.append_c ((char) (b ^ XOR_KEY));
-+			}
-+			return sb.str;
-+		}
-+	}
-+}
 diff --git a/lib/base/p2p.vala b/lib/base/p2p.vala
-index abe5255..c4a2248 100644
+index abe5255d..c4a22480 100644
 --- a/lib/base/p2p.vala
 +++ b/lib/base/p2p.vala
 @@ -889,7 +889,7 @@ namespace Frida {
@@ -218,7 +177,7 @@ index abe5255..c4a2248 100644
  			string local_cert_pem;
  			string local_key_pem;
 diff --git a/lib/base/rpc.vala b/lib/base/rpc.vala
-index 97edecf..edd34cc 100644
+index 97edecf3..036ccff7 100644
 --- a/lib/base/rpc.vala
 +++ b/lib/base/rpc.vala
 @@ -22,6 +22,11 @@ namespace Frida {
@@ -261,7 +220,7 @@ index 97edecf..edd34cc 100644
  
  			var request_id_value = rpc_message.get_element (1);
 diff --git a/lib/base/xpc.vala b/lib/base/xpc.vala
-index 8e7e483..7a1079e 100644
+index 8e7e4836..4e002092 100644
 --- a/lib/base/xpc.vala
 +++ b/lib/base/xpc.vala
 @@ -243,7 +243,7 @@ namespace Frida {
@@ -274,14 +233,14 @@ index 8e7e483..7a1079e 100644
  				description);
  		}
 diff --git a/lib/gadget/gadget.vala b/lib/gadget/gadget.vala
-index 230284c..8989410 100644
+index 230284c7..89894102 100644
 --- a/lib/gadget/gadget.vala
 +++ b/lib/gadget/gadget.vala
 @@ -580,7 +580,7 @@ namespace Frida.Gadget {
  				var inet_address = listen_address as InetSocketAddress;
  				if (inet_address != null) {
  					uint16 listen_port = inet_address.get_port ();
--					Environment.set_thread_name ("__BRAND__-gadget-tcp-%u".printf (listen_port));
+-					Environment.set_thread_name ("frida-gadget-tcp-%u".printf (listen_port));
 +					Environment.set_thread_name ("%s%u".printf (Obfuscate.decode_hex_xor ("33273c3134783234313230217821362578"), listen_port));
  					if (request != null) {
  						request.set_value (listen_port);
@@ -290,22 +249,22 @@ index 230284c..8989410 100644
  				} else {
  #if !WINDOWS
  					var unix_address = (UnixSocketAddress) listen_address;
--					Environment.set_thread_name ("__BRAND__-gadget-unix");
+-					Environment.set_thread_name ("frida-gadget-unix");
 +					Environment.set_thread_name (Obfuscate.decode_hex_xor ("33273c31347832343132302178203b3c2d"));
  					if (request != null) {
  						request.set_value (0);
  					} else {
 diff --git a/meson.build b/meson.build
-index bc5b560..6a7f707 100644
+index bc5b5606..42638ba1 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -220,11 +220,11 @@ else
    shlib_suffix = '.so'
  endif
  
--helper_name = '__BRAND__-helper' + exe_suffix
--agent_name = '__BRAND__-agent' + shlib_suffix
--gadget_name = '__BRAND__-gadget' + shlib_suffix
+-helper_name = 'frida-helper' + exe_suffix
+-agent_name = 'frida-agent' + shlib_suffix
+-gadget_name = 'frida-gadget' + shlib_suffix
 +helper_name = '__BRAND__-helper' + exe_suffix
 +agent_name = '__BRAND__-agent' + shlib_suffix
 +gadget_name = '__BRAND__-gadget' + shlib_suffix
@@ -316,40 +275,40 @@ index bc5b560..6a7f707 100644
  if host_os_family == 'darwin'
    asset_dir = root_asset_dir
 diff --git a/server/meson.build b/server/meson.build
-index 8f24cbe..aa4bec3 100644
+index 8f24cbe7..157862fe 100644
 --- a/server/meson.build
 +++ b/server/meson.build
-@@ -41,13 +41,13 @@ raw_server = executable('__BRAND__-server-raw', server_sources,
+@@ -41,13 +41,13 @@ raw_server = executable('frida-server-raw', server_sources,
    dependencies: server_deps,
  )
  
--server_name = '__BRAND__-server' + exe_suffix
+-server_name = 'frida-server' + exe_suffix
 +server_name = '__BRAND__-server' + exe_suffix
  need_universal_server = assets_mode == 'installed' and server_compat != ''
  
- server = custom_target('__BRAND__-server',
-   input: [raw_server, '__BRAND__-server.xcent'],
+ server = custom_target('frida-server',
+   input: [raw_server, 'frida-server.xcent'],
    output: need_universal_server ? f'@server_name@-@host_abi@' : server_name,
--  command: post_process + ['executable', 're.__BRAND__.Server', '@INPUT1@'],
+-  command: post_process + ['executable', 're.frida.Server', '@INPUT1@'],
 +  command: post_process + ['executable', 're.__BRAND__.Server', '@INPUT1@'],
    install: true,
    install_dir: get_option('bindir'),
  )
 diff --git a/server/server.vala b/server/server.vala
-index 0d72d59..b758bad 100644
+index 0d72d595..7b8f827e 100644
 --- a/server/server.vala
 +++ b/server/server.vala
 @@ -1,7 +1,7 @@
  namespace Frida.Server {
  	private static Application application;
  
--	private const string DEFAULT_DIRECTORY = "re.__BRAND__.server";
+-	private const string DEFAULT_DIRECTORY = "re.frida.server";
 +	private const string DEFAULT_DIRECTORY = "re.__BRAND__.server";
  	private static bool output_version = false;
  	private static string? device_id = null;
  	private static string? listen_address = null;
 diff --git a/src/agent-container.vala b/src/agent-container.vala
-index eecfa1f..86eb9f4 100644
+index eecfa1f6..86eb9f4a 100644
 --- a/src/agent-container.vala
 +++ b/src/agent-container.vala
 @@ -28,7 +28,7 @@ namespace Frida {
@@ -362,7 +321,7 @@ index eecfa1f..86eb9f4 100644
  			container.main_impl = (AgentMainFunc) main_func_symbol;
  
 diff --git a/src/darwin/darwin-host-session.vala b/src/darwin/darwin-host-session.vala
-index 2033982..3d0b348 100644
+index 2033982e..3d0b348b 100644
 --- a/src/darwin/darwin-host-session.vala
 +++ b/src/darwin/darwin-host-session.vala
 @@ -295,7 +295,7 @@ namespace Frida {
@@ -375,7 +334,7 @@ index 2033982..3d0b348 100644
  			id = yield fruitjector.inject_library_resource (pid, agent, entrypoint, agent_parameters, cancellable);
  #else
 diff --git a/src/droidy/droidy-client.vala b/src/droidy/droidy-client.vala
-index e34ab90..bedac27 100644
+index e34ab90f..bedac271 100644
 --- a/src/droidy/droidy-client.vala
 +++ b/src/droidy/droidy-client.vala
 @@ -1015,7 +1015,7 @@ namespace Frida.Droidy {
@@ -388,24 +347,24 @@ index e34ab90..bedac27 100644
  						default:
  							var length = parse_length (command_or_length);
 diff --git a/src/droidy/droidy-host-session.vala b/src/droidy/droidy-host-session.vala
-index 85891fa..e9f9da1 100644
+index 85891fad..6fb772c8 100644
 --- a/src/droidy/droidy-host-session.vala
 +++ b/src/droidy/droidy-host-session.vala
 @@ -1044,7 +1044,7 @@ namespace Frida {
  
  					shell.send_command (("CLASSPATH=%s app_process " +
  							"/data/local/tmp " +
--							"--nice-name=re.__BRAND__.helper " +
+-							"--nice-name=re.frida.helper " +
 +							"--nice-name=re.__BRAND__.helper " +
  							"re.frida.Helper " +
  							"%s; " +
  							"rm -f %s; " +
 diff --git a/src/embed-agent.py b/src/embed-agent.py
-index cfb4a59..8d1db3a 100644
+index cfb4a594..8d1db3a4 100644
 --- a/src/embed-agent.py
 +++ b/src/embed-agent.py
 @@ -76,6 +76,7 @@ def main(argv):
-             embedded_agent = priv_dir / f"__BRAND__-agent-{flavor}.so"
+             embedded_agent = priv_dir / f"frida-agent-{flavor}.so"
              if agent is not None:
                  shutil.copy(agent, embedded_agent)
 +                # Agent 已由 post_process 中的 topatch 处理，此处无需再 patch
@@ -413,7 +372,7 @@ index cfb4a59..8d1db3a 100644
                  embedded_agent.write_bytes(b"")
              embedded_assets += [embedded_agent]
 diff --git a/src/freebsd/freebsd-host-session.vala b/src/freebsd/freebsd-host-session.vala
-index 245747a..3cd11af 100644
+index 245747ab..3cd11aff 100644
 --- a/src/freebsd/freebsd-host-session.vala
 +++ b/src/freebsd/freebsd-host-session.vala
 @@ -132,7 +132,7 @@ namespace Frida {
@@ -426,7 +385,7 @@ index 245747a..3cd11af 100644
  			injectee_by_pid[pid] = id;
  
 diff --git a/src/frida-glue.c b/src/frida-glue.c
-index 6154034..eed80a5 100644
+index 6154034e..2609414d 100644
 --- a/src/frida-glue.c
 +++ b/src/frida-glue.c
 @@ -56,11 +56,13 @@ frida_init_with_runtime (FridaRuntime rt)
@@ -439,26 +398,26 @@ index 6154034..eed80a5 100644
      {
        main_context = g_main_context_ref (g_main_context_default ());
        main_loop = g_main_loop_new (main_context, FALSE);
--      main_thread = g_thread_new ("__BRAND__-loop", run_main_loop, NULL);
+-      main_thread = g_thread_new ("frida-main-loop", run_main_loop, NULL);
 +      main_thread = g_thread_new ("__BRAND__-loop", run_main_loop, NULL);
      }
  
      g_once_init_leave (&frida_initialized, TRUE);
 diff --git a/src/linux/linux-host-session.vala b/src/linux/linux-host-session.vala
-index 3f5cba7..9a1c442 100644
+index 44bd9400..54fdaccb 100644
 --- a/src/linux/linux-host-session.vala
 +++ b/src/linux/linux-host-session.vala
 @@ -64,12 +64,12 @@ namespace Frida {
  			var blob64 = Frida.Data.Agent.get_frida_agent_64_so_blob ();
  			var emulated_arm = Frida.Data.Agent.get_frida_agent_arm_so_blob ();
  			var emulated_arm64 = Frida.Data.Agent.get_frida_agent_arm64_so_blob ();
--			agent = new AgentDescriptor (PathTemplate ("__BRAND__-agent-<arch>.so"),
+-			agent = new AgentDescriptor (PathTemplate ("frida-agent-<arch>.so"),
 +			agent = new AgentDescriptor (PathTemplate ("__BRAND__-agent-<arch>.so"),
  				new Bytes.static (blob32.data),
  				new Bytes.static (blob64.data),
  				new AgentResource[] {
--					new AgentResource ("__BRAND__-agent-arm.so", new Bytes.static (emulated_arm.data), tempdir),
--					new AgentResource ("__BRAND__-agent-arm64.so", new Bytes.static (emulated_arm64.data), tempdir),
+-					new AgentResource ("frida-agent-arm.so", new Bytes.static (emulated_arm.data), tempdir),
+-					new AgentResource ("frida-agent-arm64.so", new Bytes.static (emulated_arm64.data), tempdir),
 +					new AgentResource ("__BRAND__-agent-arm.so", new Bytes.static (emulated_arm.data), tempdir),
 +					new AgentResource ("__BRAND__-agent-arm64.so", new Bytes.static (emulated_arm64.data), tempdir),
  				},
@@ -477,17 +436,17 @@ index 3f5cba7..9a1c442 100644
  			unowned string name;
  			switch (cpu_type_from_pid (pid)) {
  				case Gum.CpuType.IA32:
--					name = "__BRAND__-agent-arm.so";
+-					name = "frida-agent-arm.so";
 +					name = "__BRAND__-agent-arm.so";
  					break;
  				case Gum.CpuType.AMD64:
--					name = "__BRAND__-agent-arm64.so";
+-					name = "frida-agent-arm64.so";
 +					name = "__BRAND__-agent-arm64.so";
  					break;
  				default:
  					throw new Error.NOT_SUPPORTED ("Emulated realm is not supported on this architecture");
 diff --git a/src/qnx/qnx-host-session.vala b/src/qnx/qnx-host-session.vala
-index 7d5b3e5..3d7fb98 100644
+index 7d5b3e51..3d7fb982 100644
 --- a/src/qnx/qnx-host-session.vala
 +++ b/src/qnx/qnx-host-session.vala
 @@ -117,7 +117,7 @@ namespace Frida {
@@ -499,88 +458,11 @@ index 7d5b3e5..3d7fb98 100644
  				make_agent_parameters (pid, t.remote_address, options), cancellable);
  			injectee_by_pid[pid] = id;
  
-diff --git a/src/topatch.py b/src/topatch.py
-new file mode 100644
-index 0000000..0f499d5
---- /dev/null
-+++ b/src/topatch.py
-@@ -0,0 +1,71 @@
-+import lief
-+import sys
-+import random
-+import os
-+
-+
-+def log_color(msg):
-+    print(f"\033[1;31;40m{msg}\033[0m")
-+
-+
-+if __name__ == "__main__":
-+    input_file = sys.argv[1]
-+
-+    log_color(f"[*] Patch __BRAND__-agent: {input_file}")
-+    binary = lief.parse(input_file)
-+
-+    random_name = "__BRAND__"
-+    log_color(f"[*] Patch `frida` to `{random_name}`")
-+
-+    if not binary:
-+        log_color(f"[*] Not ELF, exit")
-+        sys.exit(1)
-+    else:
-+        for symbol in binary.symbols:
-+            if symbol.name == "frida_agent_main":
-+                symbol.name = "main"
-+            if "frida" in symbol.name:
-+                symbol.name = symbol.name.replace("frida", random_name)
-+            if "FRIDA" in symbol.name:
-+                symbol.name = symbol.name.replace("FRIDA", random_name.upper())
-+
-+        all_patch_string = ["FridaScriptEngine", "GLib-GIO", "GDBusProxy", "GumScript"]  # 字符串特征修改 尽量与源字符一样
-+
-+        for section in binary.sections:
-+            if section.name != ".rodata":
-+                continue
-+            for patch_str in all_patch_string:
-+                addr_all = section.search_all(patch_str)  # Patch 内存字符串
-+
-+                for addr in addr_all:
-+                    patch = [ord(n) for n in list(patch_str)[::-1]]
-+                    log_color(
-+                        f"[*] Patching section name={section.name} offset={hex(section.file_offset + addr)} orig:{patch_str} new:{''.join(list(patch_str)[::-1])}")
-+                    binary.patch_address(section.file_offset + addr, patch)
-+
-+        binary.write(input_file)
-+
-+        # thread_gum_js_loop
-+        random_name = "__THREAD_GUM_JS_LOOP__"
-+        log_color(f"[*] Patch `gum-js-loop` to `{random_name}`")
-+        os.system(f"sed -b -i s/gum-js-loop/{random_name}/g {input_file}")
-+
-+        random_name = "__THREAD_GMAIN__"
-+        log_color(f"[*] Patch `gmain` to `{random_name}`")
-+        os.system(f"sed -b -i s/gmain/{random_name}/g {input_file}")
-+
-+        random_name = "__THREAD_GDBUS__"
-+        log_color(f"[*] Patch `gdbus` to `{random_name}`")
-+        os.system(f"sed -b -i s/gdbus/{random_name}/g {input_file}")
-+
-+        # 注：frida-gadget 不可全局 sed，会破坏 injector 的 frida-gadget-tcp- 匹配；gadget.glue 线程名已由 gadget.vala Obfuscate 处理
-+
-+        # 仅做二进制 patch，不改协议（re.frida.*、frida:rpc 等），保证与标准 frida 客户端兼容
-+
-+        # SONAME 残留特征：libfrida-gadget-raw.so / libfrida-agent-raw.so
-+        # 等长替换（frida->brand 均 5 字节），不改变 ELF 结构，安全
-+        for raw_name in ["libfrida-gadget-raw", "libfrida-agent-raw"]:
-+            new_raw = raw_name.replace("frida", brand)
-+            log_color(f"[*] Patch `{raw_name}` to `{new_raw}`")
-+            os.system(f"sed -b -i s/{raw_name}/{new_raw}/g {input_file}")
-+        log_color(f"[*] Patch Finish")
 diff --git a/src/windows/windows-host-session.vala b/src/windows/windows-host-session.vala
-index 167ea74..f3170c1 100644
+index 167ea742..3b503f30 100644
 --- a/src/windows/windows-host-session.vala
 +++ b/src/windows/windows-host-session.vala
-@@ -251,7 +251,7 @@ namespace Frida {
+@@ -251,11 +251,11 @@ namespace Frida {
  
  			var winjector = injector as Winjector;
  #if HAVE_EMBEDDED_ASSETS
@@ -589,8 +471,13 @@ index 167ea74..f3170c1 100644
  				make_agent_parameters (pid, t.remote_address, options), cancellable);
  #else
  			var id = yield winjector.inject_library_file_with_template (pid,
+-				installed_agent_path_template (), "frida_agent_main",
++				installed_agent_path_template (), "main",
+ 				make_agent_parameters (pid, t.remote_address, options),
+ 				installed_agent_dependencies (), cancellable);
+ #endif
 diff --git a/tools/post-process.py b/tools/post-process.py
-index 4d0cd49..c057da2 100644
+index 4d0cd49f..c057da29 100644
 --- a/tools/post-process.py
 +++ b/tools/post-process.py
 @@ -67,6 +67,13 @@ def main(argv):
@@ -607,3 +494,120 @@ index 4d0cd49..c057da2 100644
      except subprocess.CalledProcessError as e:
          print(e, file=sys.stderr)
          print("Output:\n\t| " + "\n\t| ".join(e.output.strip().split("\n")), file=sys.stderr)
+diff --git a/home/work/projects/adb_test/rusda/frida-src/subprojects/frida-core/lib/base/obfuscate.vala b/home/work/projects/adb_test/rusda/frida-src/subprojects/frida-core/lib/base/obfuscate.vala
+new file mode 100644
+index 00000000..fbed1d29
+--- /dev/null
++++ b/home/work/projects/adb_test/rusda/frida-src/subprojects/frida-core/lib/base/obfuscate.vala
+@@ -0,0 +1,25 @@
++namespace Frida {
++	/**
++	 * 运行时解码特征字符串，避免二进制中出现 frida 相关字面量，规避内存扫描。
++	 * 支持 XOR 编码，可替换实现。
++	 */
++	namespace Obfuscate {
++		private const uint8 XOR_KEY = 0x55;
++
++		/**
++		 * 从 hex 编码的 XOR 密文解码字符串。
++		 * 编译期仅保留 hex 字面量，运行时还原真实字符串。
++		 */
++		public static string decode_hex_xor (string hex) {
++			var len = hex.length / 2;
++			var sb = new StringBuilder.sized (len);
++			for (var i = 0; i < len; i++) {
++				int64 val;
++				int64.try_parse (hex.substring (i * 2, 2), out val, null, 16);
++				var b = (uint8) val;
++				sb.append_c ((char) (b ^ XOR_KEY));
++			}
++			return sb.str;
++		}
++	}
++}
+diff --git a/home/work/projects/adb_test/rusda/frida-src/subprojects/frida-core/src/topatch.py b/home/work/projects/adb_test/rusda/frida-src/subprojects/frida-core/src/topatch.py
+new file mode 100644
+index 00000000..96479c21
+--- /dev/null
++++ b/home/work/projects/adb_test/rusda/frida-src/subprojects/frida-core/src/topatch.py
+@@ -0,0 +1,80 @@
++import lief
++import sys
++import random
++import string
++import os
++
++
++def random_alpha(length: int) -> str:
++    """生成随机纯字母字符串"""
++    return ''.join(random.choices(string.ascii_lowercase, k=length))
++
++
++def log_color(msg):
++    print(f"\033[1;31;40m{msg}\033[0m")
++
++
++if __name__ == "__main__":
++    input_file = sys.argv[1]
++
++    log_color(f"[*] Patch frida-agent: {input_file}")
++    binary = lief.parse(input_file)
++
++    # 随机生成品牌名（5字母，等长替换 frida）
++    brand = random_alpha(5)
++    log_color(f"[*] Patch `frida` to `{brand}`")
++
++    if not binary:
++        log_color(f"[*] Not ELF, exit")
++        sys.exit(1)
++    else:
++        # 符号表替换
++        for symbol in binary.symbols:
++            if symbol.name == "frida_agent_main":
++                symbol.name = "main"
++            if "frida" in symbol.name:
++                symbol.name = symbol.name.replace("frida", brand)
++            if "FRIDA" in symbol.name:
++                symbol.name = symbol.name.replace("FRIDA", brand.upper())
++
++        # .rodata 字符串反转
++        all_patch_string = ["FridaScriptEngine", "GLib-GIO", "GDBusProxy", "GumScript"]
++
++        for section in binary.sections:
++            if section.name != ".rodata":
++                continue
++            for patch_str in all_patch_string:
++                addr_all = section.search_all(patch_str)
++
++                for addr in addr_all:
++                    patch = [ord(n) for n in list(patch_str)[::-1]]
++                    log_color(
++                        f"[*] Patching section name={section.name} offset={hex(section.file_offset + addr)} orig:{patch_str} new:{''.join(list(patch_str)[::-1])}")
++                    binary.patch_address(section.file_offset + addr, patch)
++
++        binary.write(input_file)
++
++        # 线程名替换（随机生成，等长替换）
++        thread_gum_js_loop = random_alpha(11)  # gum-js-loop = 11字符
++        log_color(f"[*] Patch `gum-js-loop` to `{thread_gum_js_loop}`")
++        os.system(f"sed -b -i s/gum-js-loop/{thread_gum_js_loop}/g {input_file}")
++
++        thread_gmain = random_alpha(5)  # gmain = 5字符
++        log_color(f"[*] Patch `gmain` to `{thread_gmain}`")
++        os.system(f"sed -b -i s/gmain/{thread_gmain}/g {input_file}")
++
++        thread_gdbus = random_alpha(5)  # gdbus = 5字符
++        log_color(f"[*] Patch `gdbus` to `{thread_gdbus}`")
++        os.system(f"sed -b -i s/gdbus/{thread_gdbus}/g {input_file}")
++
++        # 注：frida-gadget 不可全局 sed，会破坏 injector 的 frida-gadget-tcp- 匹配；gadget.glue 线程名已由 gadget.vala Obfuscate 处理
++
++        # 仅做二进制 patch，不改协议（re.frida.*、frida:rpc 等），保证与标准 frida 客户端兼容
++
++        # SONAME 残留特征：libfrida-gadget-raw.so / libfrida-agent-raw.so
++        # 等长替换（frida->brand 均 5 字节），不改变 ELF 结构，安全
++        for raw_name in ["libfrida-gadget-raw", "libfrida-agent-raw"]:
++            new_raw = raw_name.replace("frida", brand)
++            log_color(f"[*] Patch `{raw_name}` to `{new_raw}`")
++            os.system(f"sed -b -i s/{raw_name}/{new_raw}/g {input_file}")
++        log_color(f"[*] Patch Finish")

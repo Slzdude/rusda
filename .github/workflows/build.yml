@@ -84,8 +84,7 @@ jobs:
             --host=android-arm64 \
             --enable-server \
             --enable-gadget \
-            --enable-inject \
-            --enable-compiler
+            --enable-inject
           make -j$(nproc)
           make install
 

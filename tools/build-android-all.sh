@@ -188,7 +188,6 @@ build_arch() {
         --enable-server \
         --enable-gadget \
         --enable-inject \
-        --enable-compiler \
         2>&1 | tail -5; then
         log_error "[$arch] 配置失败"
         return 1

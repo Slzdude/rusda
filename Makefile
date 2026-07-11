@@ -1,47 +1,33 @@
 # rusda 构建系统
 # 用法：make build ARCH=arm64
 
-# 默认架构
 ARCH ?= arm64
-
-# 版本号（从 frida 源码推导）
 VERSION = 17.15.4
-
-# 目录
 FRIDA_SRC = frida-src
 RUSDA_DIR = $(shell pwd)
 NDK_ROOT = $(ANDROID_NDK_ROOT)
+JOBS = $(shell nproc 2>/dev/null || echo 4)
 
-# 品牌名（从构建产物中读取）
-BRAND = $(shell grep -oP "helper_name = '\K[^']*" $(FRIDA_SRC)/subprojects/frida-core/meson.build 2>/dev/null | sed 's/-helper//' || echo "rusda")
+# 从构建产物中读取品牌名
+GET_BRAND = grep -oP "helper_name = '\K[^']*" $(FRIDA_SRC)/subprojects/frida-core/meson.build 2>/dev/null | sed 's/-helper//'
 
-.PHONY: all clean reset apply build package help
+.PHONY: all help reset apply build package clean full-reset quick install-device test
 
-# 默认目标
-all: build
-
-# 显示帮助
 help:
 	@echo "rusda 构建系统"
 	@echo ""
 	@echo "用法:"
-	@echo "  make build          # 编译 $(ARCH) 架构（默认）"
-	@echo "  make build ARCH=arm64  # 编译指定架构"
-	@echo "  make clean          # 清理构建产物"
-	@echo "  make reset          # 还原源码到干净状态"
-	@echo "  make apply          # 只应用补丁"
-	@echo "  make package        # 打包产物"
-	@echo "  make all            # 完整构建（reset + apply + build + package）"
+	@echo "  make              # 完整构建 arm64"
+	@echo "  make ARCH=arm     # 完整构建 arm"
+	@echo "  make build        # 只编译（已 apply 后）"
+	@echo "  make quick        # 快速重新编译"
+	@echo "  make clean        # 清理构建产物"
+	@echo "  make full-reset   # 清理 + 还原源码"
+	@echo "  make test         # 构建 + 安装到设备 + 测试"
 	@echo ""
 	@echo "可用架构: arm, arm64, x86, x86_64"
 
-# 检查 NDK
-check-ndk:
-ifndef ANDROID_NDK_ROOT
-	$(error ANDROID_NDK_ROOT 未设置，请设置 NDK 路径)
-endif
-
-# 还原源码到干净状态
+# 还原源码
 reset:
 	@echo "=== 还原源码 ==="
 	@cd $(FRIDA_SRC) && git checkout . 2>/dev/null || true
@@ -52,22 +38,20 @@ reset:
 	@rm -f $(FRIDA_SRC)/subprojects/frida-core/lib/base/obfuscate.vala
 	@rm -f $(FRIDA_SRC)/subprojects/frida-core/src/topatch.py
 	@rm -rf $(FRIDA_SRC)/subprojects/frida-core/home
+	@rm -f $(FRIDA_SRC)/package-lock.json
 	@echo "[✓] 源码已还原"
 
-# 应用补丁
+# 应用补丁 + 安装依赖
 apply: reset
 	@echo "=== 应用补丁 ==="
 	@python3 $(RUSDA_DIR)/tools/apply_patches.py $(RUSDA_DIR)/$(FRIDA_SRC)
 	@echo "[✓] 补丁已应用"
 
-# 安装依赖
-deps: apply
-	@echo "=== 安装依赖 ==="
-	@cd $(FRIDA_SRC)/subprojects/frida-core/src/compiler && npm install --silent 2>/dev/null || true
-	@echo "[✓] 依赖已安装"
-
 # 配置
-configure: deps check-ndk
+configure: apply
+ifndef ANDROID_NDK_ROOT
+	$(error ANDROID_NDK_ROOT 未设置)
+endif
 	@echo "=== 配置 $(ARCH) ==="
 	@mkdir -p $(FRIDA_SRC)/build-android-$(ARCH)
 	@cd $(FRIDA_SRC)/build-android-$(ARCH) && \
@@ -87,7 +71,7 @@ build: configure
 	@cd $(FRIDA_SRC)/build-android-$(ARCH) && \
 		export ANDROID_NDK_ROOT=$(NDK_ROOT) && \
 		export PATH=$(NDK_ROOT):$$PATH && \
-		make -j$$(nproc) 2>&1 | tail -20 || true
+		make -j$(JOBS) 2>&1 | tail -20 || true
 	@echo "[✓] 编译完成"
 
 # 安装
@@ -100,32 +84,23 @@ install: build
 package: install
 	@echo "=== 打包 ==="
 	@mkdir -p dist-android
-	@BRAND=$$(grep -oP "helper_name = '\K[^']*" $(FRIDA_SRC)/subprojects/frida-core/meson.build | sed 's/-helper//'); \
-	if [ -f "$(FRIDA_SRC)/dist-android/staging-$(ARCH)/bin/$${BRAND}-server" ]; then \
-		echo "  $${BRAND}-server-$(VERSION)-android-$(ARCH).xz"; \
-		xz -c -T0 "$(FRIDA_SRC)/dist-android/staging-$(ARCH)/bin/$${BRAND}-server" > "dist-android/$${BRAND}-server-$(VERSION)-android-$(ARCH).xz"; \
-	fi
-	@BRAND=$$(grep -oP "helper_name = '\K[^']*" $(FRIDA_SRC)/subprojects/frida-core/meson.build | sed 's/-helper//'); \
-	if [ -f "$(FRIDA_SRC)/dist-android/staging-$(ARCH)/bin/$${BRAND}-inject" ]; then \
-		echo "  $${BRAND}-inject-$(VERSION)-android-$(ARCH).xz"; \
-		xz -c -T0 "$(FRIDA_SRC)/dist-android/staging-$(ARCH)/bin/$${BRAND}-inject" > "dist-android/$${BRAND}-inject-$(VERSION)-android-$(ARCH).xz"; \
-	fi
-	@BRAND=$$(grep -oP "helper_name = '\K[^']*" $(FRIDA_SRC)/subprojects/frida-core/meson.build | sed 's/-helper//'); \
+	@BRAND=$$($(GET_BRAND)); \
+	STAGING=$(FRIDA_SRC)/dist-android/staging-$(ARCH); \
 	BITS=$$( [ "$(ARCH)" = "arm" ] || [ "$(ARCH)" = "x86" ] && echo 32 || echo 64 ); \
-	GADGET=$$(find "$(FRIDA_SRC)/dist-android/staging-$(ARCH)/lib" -path "*/$${BITS}/$${BRAND}-gadget.so" 2>/dev/null | head -1); \
-	if [ -n "$${GADGET}" ] && [ -f "$${GADGET}" ]; then \
-		echo "  $${BRAND}-gadget-$(VERSION)-android-$(ARCH).so.xz"; \
-		xz -c -T0 "$${GADGET}" > "dist-android/$${BRAND}-gadget-$(VERSION)-android-$(ARCH).so.xz"; \
-	fi
-	@echo "[✓] 打包完成"
-	@ls -lh dist-android/*.xz 2>/dev/null || true
+	for bin in server inject; do \
+		f="$$STAGING/bin/$${BRAND}-$$bin"; \
+		[ -f "$$f" ] && { echo "  $${BRAND}-$$bin-$(VERSION)-android-$(ARCH).xz"; xz -c -T0 "$$f" > "dist-android/$${BRAND}-$$bin-$(VERSION)-android-$(ARCH).xz"; }; \
+	done; \
+	GADGET=$$(find "$$STAGING/lib" -path "*/$$BITS/$${BRAND}-gadget.so" 2>/dev/null | head -1); \
+	[ -n "$$GADGET" ] && { echo "  $${BRAND}-gadget-$(VERSION)-android-$(ARCH).so.xz"; xz -c -T0 "$$GADGET" > "dist-android/$${BRAND}-gadget-$(VERSION)-android-$(ARCH).so.xz"; }; \
+	echo "[✓] 打包完成"; ls -lh dist-android/*.xz 2>/dev/null
 
 # 完整构建
-all: reset apply deps configure build install package
+all: package
 	@echo ""
 	@echo "=== 构建完成 ==="
 
-# 清理
+# 清理构建产物
 clean:
 	@echo "=== 清理 ==="
 	@rm -rf $(FRIDA_SRC)/build-android-*
@@ -133,26 +108,34 @@ clean:
 	@rm -rf dist-android
 	@echo "[✓] 已清理"
 
-# 完全重置（包括还原源码）
+# 完全重置
 full-reset: clean reset
 	@echo "[✓] 完全重置完成"
 
-# 快速编译（跳过还原和补丁，用于代码修改后重新编译）
+# 快速编译（跳过还原和补丁）
 quick:
+ifndef ANDROID_NDK_ROOT
+	$(error ANDROID_NDK_ROOT 未设置)
+endif
 	@echo "=== 快速编译 $(ARCH) ==="
 	@cd $(FRIDA_SRC)/build-android-$(ARCH) && \
 		export ANDROID_NDK_ROOT=$(NDK_ROOT) && \
 		export PATH=$(NDK_ROOT):$$PATH && \
-		make -j$$(nproc) 2>&1 | tail -20 || true
+		make -j$(JOBS) 2>&1 | tail -20 || true
 	@echo "[✓] 编译完成"
 
-# 安装到手机
-install-device: package
+# 安装到设备并测试
+test: package
 	@echo "=== 安装到设备 ==="
-	@BRAND=$$(grep -oP "helper_name = '\K[^']*" $(FRIDA_SRC)/subprojects/frida-core/meson.build | sed 's/-helper//'); \
-	adb push "dist-android/$${BRAND}-server-$(VERSION)-android-$(ARCH).xz" /data/local/tmp/ 2>/dev/null || \
-	adb push "$(FRIDA_SRC)/dist-android/staging-$(ARCH)/bin/$${BRAND}-server" /data/local/tmp/$${BRAND}-server
-	@BRAND=$$(grep -oP "helper_name = '\K[^']*" $(FRIDA_SRC)/subprojects/frida-core/meson.build | sed 's/-helper//'); \
-	adb shell "su -c 'chmod 755 /data/local/tmp/$${BRAND}-server'" 2>/dev/null || true
-	@echo "[✓] 已安装到设备"
-	@echo "启动: adb shell su -c '/data/local/tmp/$${BRAND}-server'"
+	@BRAND=$$($(GET_BRAND)); \
+	SERVER="dist-android/$${BRAND}-server-$(VERSION)-android-$(ARCH).xz"; \
+	xz -dk "$$SERVER" -c > /tmp/$${BRAND}-server 2>/dev/null || cp "$(FRIDA_SRC)/dist-android/staging-$(ARCH)/bin/$${BRAND}-server" /tmp/$${BRAND}-server; \
+	adb push /tmp/$${BRAND}-server /data/local/tmp/ && \
+	adb shell "su -c 'chmod 755 /data/local/tmp/$${BRAND}-server'" && \
+	rm -f /tmp/$${BRAND}-server; \
+	echo "=== 启动 server ===" ; \
+	adb shell "su -c '/data/local/tmp/$${BRAND}-server'" & sleep 3; \
+	echo "=== 测试连接 ===" ; \
+	frida-ps -U 2>&1 | head -5 || echo "连接失败"; \
+	echo ""; \
+	echo "启动: adb shell su -c '/data/local/tmp/$${BRAND}-server'"

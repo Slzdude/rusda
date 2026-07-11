@@ -104,6 +104,112 @@ jobs:
             xz -c -T0 "$COMPILER" > "$OUTPUT/${BRAND}-compiler-${VERSION}-android-${ARCH}.so.xz"
           fi
 
+      - name: Verify artifacts
+        working-directory: frida-src
+        run: |
+          echo "=== 验证编译产物 ==="
+          VERSION=${{ steps.version.outputs.version }}
+          ARCH=arm64
+          STAGING=dist/staging
+          BRAND=$(grep -oP "helper_name = '\K[^']*" subprojects/frida-core/meson.build | sed 's/-helper//')
+
+          echo "品牌名: $BRAND"
+          echo "版本: $VERSION"
+          echo ""
+
+          # 1. 检查文件存在
+          echo "1. 检查文件存在..."
+          for f in "$STAGING/bin/${BRAND}-server" "$STAGING/bin/${BRAND}-inject"; do
+            if [ -f "$f" ]; then
+              echo "  ✓ $(basename $f) ($(du -h $f | cut -f1))"
+            else
+              echo "  ✗ $(basename $f) 不存在"
+              exit 1
+            fi
+          done
+
+          # 2. 检查 ELF 架构
+          echo ""
+          echo "2. 检查 ELF 架构..."
+          for f in "$STAGING/bin/${BRAND}-server" "$STAGING/bin/${BRAND}-inject"; do
+            MACHINE=$(readelf -h "$f" 2>/dev/null | grep "Machine:" | awk '{print $2, $3}')
+            if echo "$MACHINE" | grep -q "AArch64"; then
+              echo "  ✓ $(basename $f): $MACHINE"
+            else
+              echo "  ✗ $(basename $f): $MACHINE (期望 AArch64)"
+              exit 1
+            fi
+          done
+
+          # 3. 检查特征串已清除
+          echo ""
+          echo "3. 检查特征串清除..."
+          for feature in "FridaScriptEngine" "GumScript" "GLib-GIO" "GDBusProxy" "gum-js-loop" "gmain" "gdbus"; do
+            if strings "$STAGING/bin/${BRAND}-server" | grep -q "$feature"; then
+              echo "  ✗ $feature 仍存在"
+              exit 1
+            else
+              echo "  ✓ $feature 已清除"
+            fi
+          done
+
+          # 4. 检查反转后的串存在
+          echo ""
+          echo "4. 检查反转串..."
+          for feature in "enignEtpircSadirF" "tpircSmuG"; do
+            if strings "$STAGING/bin/${BRAND}-server" | grep -q "$feature"; then
+              echo "  ✓ $feature 存在"
+            else
+              echo "  ✗ $feature 不存在"
+            fi
+          done
+
+          # 5. 检查品牌名替换
+          echo ""
+          echo "5. 检查品牌名..."
+          if strings "$STAGING/bin/${BRAND}-server" | grep -q "rusda"; then
+            echo "  ✗ 'rusda' 仍存在"
+          else
+            echo "  ✓ 'rusda' 已替换"
+          fi
+
+          echo ""
+          echo "=== 验证完成 ==="
+
+      - name: Test with Android Emulator (optional)
+        if: success()
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: arm64
+          profile: Nexus 6
+          script: |
+            echo "=== Android Emulator 测试 ==="
+            # 等待模拟器启动
+            adb wait-for-device
+            sleep 30
+
+            # 推送 server
+            BRAND=$(grep -oP "helper_name = '\K[^']*" subprojects/frida-core/meson.build | sed 's/-helper//')
+            adb push "dist/staging/bin/${BRAND}-server" /data/local/tmp/
+            adb shell "chmod 755 /data/local/tmp/${BRAND}-server"
+
+            # 启动 server
+            adb shell "/data/local/tmp/${BRAND}-server" &
+            sleep 5
+
+            # 测试连接
+            if adb shell "netstat -tlnp | grep 27042"; then
+              echo "✓ Server 正在监听"
+            else
+              echo "✗ Server 未监听"
+            fi
+
+            # 安装 frida-tools 测试
+            pip install frida-tools
+            frida-ps -U || echo "连接失败"
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

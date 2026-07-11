@@ -21,32 +21,22 @@ def random_alpha(length: int) -> str:
     return ''.join(random.choices(string.ascii_lowercase, k=length))
 
 
-def xor_encode(text: str, key: int = 0x55) -> str:
-    """将字符串编码为 XOR hex"""
-    return ''.join(f'{ord(c) ^ key:02x}' for c in text)
-
-
 def generate_config() -> dict:
     """生成随机配置"""
     brand = random_alpha(5)  # frida = 5字符
+    prgname = random_alpha(7)  # russell = 7字符
 
     # 线程名（等长替换）
     thread_gum_js_loop = random_alpha(11)  # gum-js-loop = 11字符
     thread_gmain = random_alpha(5)  # gmain = 5字符
     thread_gdbus = random_alpha(5)  # gdbus = 5字符
 
-    # 生成 XOR 编码的字符串
-    xor_strings = {
-        'FRIDA_RPC': xor_encode(f'{brand}:rpc'),
-        'FRIDA_ERROR_QUARK': xor_encode(f'{brand}-error-quark'),
-    }
-
     return {
         'brand': brand,
+        'prgname': prgname,
         'thread_gum_js_loop': thread_gum_js_loop,
         'thread_gmain': thread_gmain,
         'thread_gdbus': thread_gdbus,
-        'xor_strings': xor_strings,
     }
 
 
@@ -61,15 +51,13 @@ def apply_patch_with_replacements(patch_file: Path, target_dir: Path, config: di
     brand = config['brand']
     content = content.replace('__BRAND__', brand)
 
+    # 替换进程名占位符（7字符，与品牌名不同）
+    content = content.replace('__PRGNAME__', config['prgname'])
+
     # 替换线程名占位符
     content = content.replace('__THREAD_GUM_JS_LOOP__', config['thread_gum_js_loop'])
     content = content.replace('__THREAD_GMAIN__', config['thread_gmain'])
     content = content.replace('__THREAD_GDBUS__', config['thread_gdbus'])
-
-    # 替换 XOR 占位符
-    for name, hex_str in config['xor_strings'].items():
-        placeholder = f'__XOR_{name}__'
-        content = content.replace(placeholder, hex_str)
 
     # 写入临时文件
     tmp_patch = patch_file.with_suffix('.tmp')
@@ -137,6 +125,7 @@ def main():
 
     print(f"\n[*] 本次构建配置:")
     print(f"    品牌名: {config['brand']}")
+    print(f"    进程名: {config['prgname']}")
     print(f"    线程名: {config['thread_gum_js_loop']}, {config['thread_gmain']}, {config['thread_gdbus']}")
 
     # 保存配置到 frida 源码目录

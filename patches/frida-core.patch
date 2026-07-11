@@ -185,7 +185,7 @@ index 97edecf3..036ccff7 100644
  		}
  
 +		private static string get_rpc_str (bool quoted) {
-+			var s = Obfuscate.decode_hex_xor ("__XOR_FRIDA_RPC__");
++			var s = Obfuscate.decode_hex_xor ("33273c31346f272536");
 +			return quoted ? "\"" + s + "\"" : s;
 +		}
 +
@@ -228,7 +228,7 @@ index 8e7e4836..4e002092 100644
  
  			throw (Error) new GLib.Error.literal (
 -				Quark.from_string ("frida-error-quark"),
-+				Quark.from_string (Obfuscate.decode_hex_xor ("__XOR_FRIDA_ERROR_QUARK__")),
++				Quark.from_string (Obfuscate.decode_hex_xor ("33273c3134783027273a2778242034273e")),
  				translate_error (domain, code, description),
  				description);
  		}
@@ -392,14 +392,14 @@ index 6154034e..2609414d 100644
      g_io_module_openssl_register ();
  #endif
  
-+    g_set_prgname ("__BRAND__");
++    g_set_prgname ("__PRGNAME__");
 +
      if (runtime == FRIDA_RUNTIME_OTHER)
      {
        main_context = g_main_context_ref (g_main_context_default ());
        main_loop = g_main_loop_new (main_context, FALSE);
 -      main_thread = g_thread_new ("frida-main-loop", run_main_loop, NULL);
-+      main_thread = g_thread_new ("__BRAND__-loop", run_main_loop, NULL);
++      main_thread = g_thread_new ("__BRAND__-main-loop", run_main_loop, NULL);
      }
  
      g_once_init_leave (&frida_initialized, TRUE);

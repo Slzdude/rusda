@@ -254,6 +254,46 @@ def apply_changes(frida_core_dir):
     f.write_text(c)
     print("  ✓ Gadget 线程名替换完成")
 
+    # 21b. src/linux/linux-host-session.vala - zymbiote socket
+    print("[21b] src/linux/linux-host-session.vala - zymbiote socket")
+    f = d / "src/linux/linux-host-session.vala"
+    c = f.read_text()
+    c = c.replace('/frida-zymbiote-', f'/__BRAND__-zymbiote-')
+    c = c.replace('/frida-zymbiote-00000000000000000000000000000000',
+                  f'/__BRAND__-zymbiote-00000000000000000000000000000000')
+    f.write_text(c)
+    print("  ✓ Zymbiote socket 路径替换完成")
+
+    # 21c. src/linux/helpers/zymbiote.c - zymbiote 模板
+    print("[21c] src/linux/helpers/zymbiote.c - zymbiote 模板")
+    zymbiote_c = d / "src/linux" / "helpers" / "zymbiote.c"
+    if zymbiote_c.exists():
+        c = zymbiote_c.read_text()
+        c = c.replace('/frida-zymbiote-00000000000000000000000000000000',
+                      f'/__BRAND__-zymbiote-00000000000000000000000000000000')
+        zymbiote_c.write_text(c)
+        print("  ✓ Zymbiote 模板替换完成")
+    else:
+        print("  ⚠ zymbiote.c 不存在，跳过")
+
+    # 21d. src/linux/frida-helper-process.vala - helper 名
+    print("[21d] src/linux/frida-helper-process.vala - helper 名")
+    f = d / "src/linux" / "frida-helper-process.vala"
+    c = f.read_text()
+    c = c.replace('"frida-helper-32"', '"__BRAND__-helper-32"')
+    c = c.replace('"frida-helper-64"', '"__BRAND__-helper-64"')
+    f.write_text(c)
+    print("  ✓ Helper 名替换完成")
+
+    # 21e. src/linux/linux-host-session.vala - helper 路径
+    print("[21e] src/linux/linux-host-session.vala - helper 路径")
+    f = d / "src/linux" / "linux-host-session.vala"
+    c = f.read_text()
+    c = c.replace('/data/local/tmp/frida-helper-', '/data/local/tmp/__BRAND__-helper-')
+    c = c.replace('/frida-helper-', '/__BRAND__-helper-')
+    f.write_text(c)
+    print("  ✓ Helper 路径替换完成")
+
     # 22. lib/base/meson.build - 添加 obfuscate.vala
     print("[22] lib/base/meson.build")
     f = d / "lib/base/meson.build"

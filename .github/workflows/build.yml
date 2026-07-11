@@ -51,10 +51,6 @@ jobs:
       - name: Apply patches
         run: python ${{ github.workspace }}/tools/apply_patches.py frida-src
 
-      - name: Install compiler dependencies
-        working-directory: frida-src/subprojects/frida-core/src/compiler
-        run: npm install
-
       - name: Build
         working-directory: frida-src
         env:

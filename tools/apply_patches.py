@@ -166,6 +166,21 @@ def main():
             break
 
     if success:
+        # 安装 compiler 的 npm 依赖
+        compiler_dir = frida_dir / 'subprojects' / 'frida-core' / 'src' / 'compiler'
+        if (compiler_dir / 'package.json').exists():
+            print("\n[*] 安装 compiler npm 依赖...")
+            result = subprocess.run(
+                ['npm', 'install', '--silent'],
+                cwd=compiler_dir,
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                print("[✓] npm 依赖安装完成")
+            else:
+                print(f"[!] npm 安装失败: {result.stderr[:200]}")
+
         print("\n" + "=" * 60)
         print("[✓] 所有补丁应用成功！")
         print(f"\n[*] 下一步:")

@@ -185,7 +185,7 @@ index 97edecf3..036ccff7 100644
  		}
  
 +		private static string get_rpc_str (bool quoted) {
-+			var s = Obfuscate.decode_hex_xor ("__XOR_FRIDA_RPC__");
++			var s = Obfuscate.decode_hex_xor ("33273c31346f272536");
 +			return quoted ? "\"" + s + "\"" : s;
 +		}
 +
@@ -228,7 +228,7 @@ index 8e7e4836..4e002092 100644
  
  			throw (Error) new GLib.Error.literal (
 -				Quark.from_string ("frida-error-quark"),
-+				Quark.from_string (Obfuscate.decode_hex_xor ("__XOR_FRIDA_ERROR_QUARK__")),
++				Quark.from_string (Obfuscate.decode_hex_xor ("33273c3134783027273a2778242034273e")),
  				translate_error (domain, code, description),
  				description);
  		}
@@ -392,50 +392,19 @@ index 6154034e..2609414d 100644
      g_io_module_openssl_register ();
  #endif
  
-+    g_set_prgname ("__BRAND__");
++    g_set_prgname ("__PRGNAME__");
 +
      if (runtime == FRIDA_RUNTIME_OTHER)
      {
        main_context = g_main_context_ref (g_main_context_default ());
        main_loop = g_main_loop_new (main_context, FALSE);
 -      main_thread = g_thread_new ("frida-main-loop", run_main_loop, NULL);
-+      main_thread = g_thread_new ("__BRAND__-loop", run_main_loop, NULL);
++      main_thread = g_thread_new ("__BRAND__-main-loop", run_main_loop, NULL);
      }
  
      g_once_init_leave (&frida_initialized, TRUE);
-diff --git a/src/linux/frida-helper-process.vala b/src/linux/frida-helper-process.vala
-index 2e92db04..16c58893 100644
---- a/src/linux/frida-helper-process.vala
-+++ b/src/linux/frida-helper-process.vala
-@@ -644,11 +644,11 @@ namespace Frida {
- #if HAVE_EMBEDDED_ASSETS
- 			var blob32 = Frida.Data.Helper.get_frida_helper_32_blob ();
- 			if (blob32.data.length > 0)
--				helper32 = make_temporary_helper ("frida-helper-32", blob32.data);
-+				helper32 = make_temporary_helper ("__BRAND__-helper-32", blob32.data);
- 
- 			var blob64 = Frida.Data.Helper.get_frida_helper_64_blob ();
- 			if (blob64.data.length > 0)
--				helper64 = make_temporary_helper ("frida-helper-64", blob64.data);
-+				helper64 = make_temporary_helper ("__BRAND__-helper-64", blob64.data);
- #else
- 			var tpl = PathTemplate (Frida.helper_path);
- 			string path = tpl.expand ((sizeof (void *) == 8) ? "32" : "64");
-diff --git a/src/linux/helpers/zymbiote.c b/src/linux/helpers/zymbiote.c
-index b9fa5268..39fc91a0 100644
---- a/src/linux/helpers/zymbiote.c
-+++ b/src/linux/helpers/zymbiote.c
-@@ -37,7 +37,7 @@ struct _ZymbioteContext
- 
- ZymbioteContext zymbiote =
- {
--  .socket_path = "/frida-zymbiote-00000000000000000000000000000000",
-+  .socket_path = "/__BRAND__-zymbiote-00000000000000000000000000000000",
- };
- 
- int frida_zymbiote_replacement_setargv0 (JNIEnv * env, jobject clazz, jstring name);
 diff --git a/src/linux/linux-host-session.vala b/src/linux/linux-host-session.vala
-index 44bd9400..ede3b6b6 100644
+index 44bd9400..54fdaccb 100644
 --- a/src/linux/linux-host-session.vala
 +++ b/src/linux/linux-host-session.vala
 @@ -64,12 +64,12 @@ namespace Frida {
@@ -476,33 +445,6 @@ index 44bd9400..ede3b6b6 100644
  					break;
  				default:
  					throw new Error.NOT_SUPPORTED ("Emulated realm is not supported on this architecture");
-@@ -462,7 +462,7 @@ namespace Frida {
- 
- 			try {
- 				string instance_id = Uuid.string_random ().replace ("-", "");
--				string helper_path = "/data/local/tmp/frida-helper-" + instance_id + ".dex";
-+				string helper_path = "/data/local/tmp/__BRAND__-helper-" + instance_id + ".dex";
- 				FileUtils.set_data (helper_path, Frida.Data.Android.get_helper_dex_blob ().data);
- 				Posix.chmod (helper_path, 0644);
- 
-@@ -1528,7 +1528,7 @@ namespace Frida {
- 			ensure_request = new Promise<bool> ();
- 
- 			if (server_name == null) {
--				string name = "/frida-zymbiote-" + Uuid.string_random ().replace ("-", "");
-+				string name = "/__BRAND__-zymbiote-" + Uuid.string_random ().replace ("-", "");
- 				var address = new UnixSocketAddress.with_type (name, -1, UnixSocketAddressType.ABSTRACT);
- 
- 				try {
-@@ -1954,7 +1954,7 @@ namespace Frida {
- 
- 			unowned uint8[] payload_template = blob.data[text.file_offset:text.file_offset + text.file_size];
- 
--			void * p = memmem (payload_template, "/frida-zymbiote-00000000000000000000000000000000".data);
-+			void * p = memmem (payload_template, "/__BRAND__-zymbiote-00000000000000000000000000000000".data);
- 			assert (p != null);
- 			size_t data_offset = (uint8 *) p - (uint8 *) payload_template;
- 
 diff --git a/src/qnx/qnx-host-session.vala b/src/qnx/qnx-host-session.vala
 index 7d5b3e51..3d7fb982 100644
 --- a/src/qnx/qnx-host-session.vala

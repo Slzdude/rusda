@@ -170,25 +170,6 @@ def main():
             else:
                 print(f"[!] npm 安装失败: {result.stderr[:200]}")
 
-        # 替换 zymbiote ELF 中的 frida-zymbiote 字符串
-        print("\n[*] 替换 zymbiote ELF 中的特征字符串...")
-        brand = config['brand']
-        zymbiote_dir = frida_dir / 'subprojects' / 'frida-core' / 'src' / 'linux' / 'helpers' / 'artifacts' / 'native'
-        if zymbiote_dir.exists():
-            for elf_file in zymbiote_dir.rglob('zymbiote.elf'):
-                # 使用 sed 替换（等长替换）
-                old_str = '/frida-zymbiote-'
-                new_str = f'/{brand}-zymbiote-'
-                result = subprocess.run(
-                    ['sed', '-i', f's|{old_str}|{new_str}|g', str(elf_file)],
-                    capture_output=True,
-                    text=True
-                )
-                if result.returncode == 0:
-                    print(f"  [✓] {elf_file.parent.name}/zymbiote.elf")
-                else:
-                    print(f"  [!] {elf_file.parent.name}/zymbiote.elf 替换失败")
-
         print("\n" + "=" * 60)
         print("[✓] 所有补丁应用成功！")
         print(f"\n[*] 下一步:")

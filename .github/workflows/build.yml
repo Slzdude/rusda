@@ -2,8 +2,9 @@ name: Build and Release
 
 on:
   push:
+    branches: [main]
     tags:
-      - '[0-9]*'  # 匹配纯数字开头的 tag，如 17.15.4
+      - '[0-9]*'
 
 permissions:
   contents: write
@@ -16,10 +17,14 @@ jobs:
       - name: Checkout rusda
         uses: actions/checkout@v4
 
-      - name: Extract version from tag
+      - name: Extract version
         id: version
         run: |
-          TAG=${GITHUB_REF#refs/tags/}
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG=${GITHUB_REF#refs/tags/}
+          else
+            TAG="17.15.4"
+          fi
           echo "version=$TAG" >> $GITHUB_OUTPUT
           echo "Building for Frida version: $TAG"
 
@@ -56,7 +61,6 @@ jobs:
         env:
           ANDROID_NDK_ROOT: ${{ env.ANDROID_NDK_ROOT }}
         run: |
-          # Build single architecture
           mkdir -p build
           cd build
           ../configure \
@@ -68,53 +72,14 @@ jobs:
           make -j$(nproc)
           make install
 
-      - name: Package artifacts
-        working-directory: frida-src
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          ARCH=arm64
-          STAGING=dist/staging
-          OUTPUT=dist/output
-          mkdir -p $OUTPUT
-
-          # Get brand name
-          BRAND=$(grep -oP "helper_name = '\K[^']*" subprojects/frida-core/meson.build | sed 's/-helper//')
-          echo "Brand: $BRAND"
-
-          # Package server
-          if [ -f "$STAGING/bin/${BRAND}-server" ]; then
-            xz -c -T0 "$STAGING/bin/${BRAND}-server" > "$OUTPUT/${BRAND}-server-${VERSION}-android-${ARCH}.xz"
-          fi
-
-          # Package inject
-          if [ -f "$STAGING/bin/${BRAND}-inject" ]; then
-            xz -c -T0 "$STAGING/bin/${BRAND}-inject" > "$OUTPUT/${BRAND}-inject-${VERSION}-android-${ARCH}.xz"
-          fi
-
-          # Package gadget
-          BITS=$([ "$ARCH" = "arm" ] || [ "$ARCH" = "x86" ] && echo 32 || echo 64)
-          GADGET=$(find "$STAGING/lib" -path "*/${BITS}/${BRAND}-gadget.so" | head -1)
-          if [ -n "$GADGET" ] && [ -f "$GADGET" ]; then
-            xz -c -T0 "$GADGET" > "$OUTPUT/${BRAND}-gadget-${VERSION}-android-${ARCH}.so.xz"
-          fi
-
-          # Package compiler
-          COMPILER=$(find "$STAGING/lib" -name "*compiler*.so" -o -name "*compiler*.dll" | head -1)
-          if [ -n "$COMPILER" ] && [ -f "$COMPILER" ]; then
-            xz -c -T0 "$COMPILER" > "$OUTPUT/${BRAND}-compiler-${VERSION}-android-${ARCH}.so.xz"
-          fi
-
       - name: Verify artifacts
         working-directory: frida-src
         run: |
           echo "=== 验证编译产物 ==="
-          VERSION=${{ steps.version.outputs.version }}
-          ARCH=arm64
           STAGING=dist/staging
           BRAND=$(grep -oP "helper_name = '\K[^']*" subprojects/frida-core/meson.build | sed 's/-helper//')
 
           echo "品牌名: $BRAND"
-          echo "版本: $VERSION"
           echo ""
 
           # 1. 检查文件存在
@@ -153,7 +118,7 @@ jobs:
             fi
           done
 
-          # 4. 检查反转后的串存在
+          # 4. 检查反转串存在
           echo ""
           echo "4. 检查反转串..."
           for feature in "enignEtpircSadirF" "tpircSmuG"; do
@@ -176,47 +141,48 @@ jobs:
           echo ""
           echo "=== 验证完成 ==="
 
-      - name: Test with Android Emulator (optional)
-        if: success()
-        continue-on-error: true
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 30
-          arch: arm64
-          profile: Nexus 6
-          script: |
-            echo "=== Android Emulator 测试 ==="
-            # 等待模拟器启动
-            adb wait-for-device
-            sleep 30
+      - name: Package artifacts (tag only)
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: frida-src
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          ARCH=arm64
+          STAGING=dist/staging
+          OUTPUT=dist/output
+          mkdir -p $OUTPUT
 
-            # 推送 server
-            BRAND=$(grep -oP "helper_name = '\K[^']*" subprojects/frida-core/meson.build | sed 's/-helper//')
-            adb push "dist/staging/bin/${BRAND}-server" /data/local/tmp/
-            adb shell "chmod 755 /data/local/tmp/${BRAND}-server"
+          BRAND=$(grep -oP "helper_name = '\K[^']*" subprojects/frida-core/meson.build | sed 's/-helper//')
+          echo "打包 $BRAND $VERSION..."
 
-            # 启动 server
-            adb shell "/data/local/tmp/${BRAND}-server" &
-            sleep 5
+          # Package server
+          if [ -f "$STAGING/bin/${BRAND}-server" ]; then
+            xz -c -T0 "$STAGING/bin/${BRAND}-server" > "$OUTPUT/${BRAND}-server-${VERSION}-android-${ARCH}.xz"
+          fi
 
-            # 测试连接
-            if adb shell "netstat -tlnp | grep 27042"; then
-              echo "✓ Server 正在监听"
-            else
-              echo "✗ Server 未监听"
-            fi
+          # Package inject
+          if [ -f "$STAGING/bin/${BRAND}-inject" ]; then
+            xz -c -T0 "$STAGING/bin/${BRAND}-inject" > "$OUTPUT/${BRAND}-inject-${VERSION}-android-${ARCH}.xz"
+          fi
 
-            # 安装 frida-tools 测试
-            pip install frida-tools
-            frida-ps -U || echo "连接失败"
+          # Package gadget
+          BITS=64
+          GADGET=$(find "$STAGING/lib" -path "*/${BITS}/${BRAND}-gadget.so" | head -1)
+          if [ -n "$GADGET" ] && [ -f "$GADGET" ]; then
+            xz -c -T0 "$GADGET" > "$OUTPUT/${BRAND}-gadget-${VERSION}-android-${ARCH}.so.xz"
+          fi
 
-      - name: Upload artifacts
+          echo "打包完成"
+          ls -lh $OUTPUT/
+
+      - name: Upload artifacts (tag only)
+        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
           name: artifacts-arm64
           path: frida-src/dist/output/*.xz
 
   release:
+    if: startsWith(github.ref, 'refs/tags/')
     needs: build
     runs-on: ubuntu-latest
 

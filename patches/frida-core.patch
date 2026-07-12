@@ -177,7 +177,7 @@ index abe5255d..c4a22480 100644
  			string local_cert_pem;
  			string local_key_pem;
 diff --git a/lib/base/rpc.vala b/lib/base/rpc.vala
-index 97edecf3..036ccff7 100644
+index 97edecf3..edd34cc4 100644
 --- a/lib/base/rpc.vala
 +++ b/lib/base/rpc.vala
 @@ -22,6 +22,11 @@ namespace Frida {
@@ -220,7 +220,7 @@ index 97edecf3..036ccff7 100644
  
  			var request_id_value = rpc_message.get_element (1);
 diff --git a/lib/base/xpc.vala b/lib/base/xpc.vala
-index 8e7e4836..4e002092 100644
+index 8e7e4836..7a1079e3 100644
 --- a/lib/base/xpc.vala
 +++ b/lib/base/xpc.vala
 @@ -243,7 +243,7 @@ namespace Frida {
@@ -307,32 +307,6 @@ index 0d72d595..7b8f827e 100644
  	private static bool output_version = false;
  	private static string? device_id = null;
  	private static string? listen_address = null;
-diff --git a/src/agent-container.vala b/src/agent-container.vala
-index eecfa1f6..86eb9f4a 100644
---- a/src/agent-container.vala
-+++ b/src/agent-container.vala
-@@ -28,7 +28,7 @@ namespace Frida {
- 			}
- 
- 			void * main_func_symbol;
--			var main_func_found = container.module.symbol ("frida_agent_main", out main_func_symbol);
-+			var main_func_found = container.module.symbol ("main", out main_func_symbol);
- 			assert (main_func_found);
- 			container.main_impl = (AgentMainFunc) main_func_symbol;
- 
-diff --git a/src/darwin/darwin-host-session.vala b/src/darwin/darwin-host-session.vala
-index 2033982e..3d0b348b 100644
---- a/src/darwin/darwin-host-session.vala
-+++ b/src/darwin/darwin-host-session.vala
-@@ -295,7 +295,7 @@ namespace Frida {
- 		private async uint inject_agent (uint pid, string agent_parameters, Cancellable? cancellable) throws Error, IOError {
- 			uint id;
- 
--			unowned string entrypoint = "frida_agent_main";
-+			unowned string entrypoint = "main";
- #if HAVE_EMBEDDED_ASSETS
- 			id = yield fruitjector.inject_library_resource (pid, agent, entrypoint, agent_parameters, cancellable);
- #else
 diff --git a/src/droidy/droidy-client.vala b/src/droidy/droidy-client.vala
 index e34ab90f..bedac271 100644
 --- a/src/droidy/droidy-client.vala
@@ -371,21 +345,8 @@ index cfb4a594..8d1db3a4 100644
              else:
                  embedded_agent.write_bytes(b"")
              embedded_assets += [embedded_agent]
-diff --git a/src/freebsd/freebsd-host-session.vala b/src/freebsd/freebsd-host-session.vala
-index 245747ab..3cd11aff 100644
---- a/src/freebsd/freebsd-host-session.vala
-+++ b/src/freebsd/freebsd-host-session.vala
-@@ -132,7 +132,7 @@ namespace Frida {
- 
- 			var stream_request = Pipe.open (t.local_address, cancellable);
- 
--			var id = yield binjector.inject_library_resource (pid, agent_desc, "frida_agent_main",
-+			var id = yield binjector.inject_library_resource (pid, agent_desc, "main",
- 				make_agent_parameters (pid, t.remote_address, options), cancellable);
- 			injectee_by_pid[pid] = id;
- 
 diff --git a/src/frida-glue.c b/src/frida-glue.c
-index 6154034e..2609414d 100644
+index 6154034e..4cda975c 100644
 --- a/src/frida-glue.c
 +++ b/src/frida-glue.c
 @@ -56,11 +56,13 @@ frida_init_with_runtime (FridaRuntime rt)
@@ -404,7 +365,7 @@ index 6154034e..2609414d 100644
  
      g_once_init_leave (&frida_initialized, TRUE);
 diff --git a/src/linux/linux-host-session.vala b/src/linux/linux-host-session.vala
-index 44bd9400..54fdaccb 100644
+index 44bd9400..6226d5f0 100644
 --- a/src/linux/linux-host-session.vala
 +++ b/src/linux/linux-host-session.vala
 @@ -64,12 +64,12 @@ namespace Frida {
@@ -423,15 +384,6 @@ index 44bd9400..54fdaccb 100644
  				},
  				AgentMode.INSTANCED,
  				tempdir);
-@@ -387,7 +387,7 @@ namespace Frida {
- 		protected override async Future<IOStream> perform_attach_to (uint pid, HashTable<string, Variant> options,
- 				Cancellable? cancellable, out Object? transport) throws Error, IOError {
- 			uint id;
--			string entrypoint = "frida_agent_main";
-+			string entrypoint = "main";
- 			string parameters = make_agent_parameters (pid, "", options);
- 			AgentFeatures features = CONTROL_CHANNEL;
- 			var linjector = (Linjector) injector;
 @@ -412,10 +412,10 @@ namespace Frida {
  			unowned string name;
  			switch (cpu_type_from_pid (pid)) {
@@ -445,37 +397,6 @@ index 44bd9400..54fdaccb 100644
  					break;
  				default:
  					throw new Error.NOT_SUPPORTED ("Emulated realm is not supported on this architecture");
-diff --git a/src/qnx/qnx-host-session.vala b/src/qnx/qnx-host-session.vala
-index 7d5b3e51..3d7fb982 100644
---- a/src/qnx/qnx-host-session.vala
-+++ b/src/qnx/qnx-host-session.vala
-@@ -117,7 +117,7 @@ namespace Frida {
- 
- 			var stream_request = Pipe.open (t.local_address, cancellable);
- 
--			var id = yield qinjector.inject_library_resource (pid, agent_desc, "frida_agent_main",
-+			var id = yield qinjector.inject_library_resource (pid, agent_desc, "main",
- 				make_agent_parameters (pid, t.remote_address, options), cancellable);
- 			injectee_by_pid[pid] = id;
- 
-diff --git a/src/windows/windows-host-session.vala b/src/windows/windows-host-session.vala
-index 167ea742..3b503f30 100644
---- a/src/windows/windows-host-session.vala
-+++ b/src/windows/windows-host-session.vala
-@@ -251,11 +251,11 @@ namespace Frida {
- 
- 			var winjector = injector as Winjector;
- #if HAVE_EMBEDDED_ASSETS
--			var id = yield winjector.inject_library_resource (pid, agent, "frida_agent_main",
-+			var id = yield winjector.inject_library_resource (pid, agent, "main",
- 				make_agent_parameters (pid, t.remote_address, options), cancellable);
- #else
- 			var id = yield winjector.inject_library_file_with_template (pid,
--				installed_agent_path_template (), "frida_agent_main",
-+				installed_agent_path_template (), "main",
- 				make_agent_parameters (pid, t.remote_address, options),
- 				installed_agent_dependencies (), cancellable);
- #endif
 diff --git a/tools/post-process.py b/tools/post-process.py
 index 4d0cd49f..c057da29 100644
 --- a/tools/post-process.py
@@ -494,120 +415,3 @@ index 4d0cd49f..c057da29 100644
      except subprocess.CalledProcessError as e:
          print(e, file=sys.stderr)
          print("Output:\n\t| " + "\n\t| ".join(e.output.strip().split("\n")), file=sys.stderr)
-diff --git a/lib/base/obfuscate.vala b/lib/base/obfuscate.vala
-new file mode 100644
-index 00000000..fbed1d29
---- /dev/null
-+++ b/lib/base/obfuscate.vala
-@@ -0,0 +1,25 @@
-+namespace Frida {
-+	/**
-+	 * 运行时解码特征字符串，避免二进制中出现 frida 相关字面量，规避内存扫描。
-+	 * 支持 XOR 编码，可替换实现。
-+	 */
-+	namespace Obfuscate {
-+		private const uint8 XOR_KEY = 0x55;
-+
-+		/**
-+		 * 从 hex 编码的 XOR 密文解码字符串。
-+		 * 编译期仅保留 hex 字面量，运行时还原真实字符串。
-+		 */
-+		public static string decode_hex_xor (string hex) {
-+			var len = hex.length / 2;
-+			var sb = new StringBuilder.sized (len);
-+			for (var i = 0; i < len; i++) {
-+				int64 val;
-+				int64.try_parse (hex.substring (i * 2, 2), out val, null, 16);
-+				var b = (uint8) val;
-+				sb.append_c ((char) (b ^ XOR_KEY));
-+			}
-+			return sb.str;
-+		}
-+	}
-+}
-diff --git a/src/topatch.py b/src/topatch.py
-new file mode 100644
-index 00000000..96479c21
---- /dev/null
-+++ b/src/topatch.py
-@@ -0,0 +1,80 @@
-+import lief
-+import sys
-+import random
-+import string
-+import os
-+
-+
-+def random_alpha(length: int) -> str:
-+    """生成随机纯字母字符串"""
-+    return ''.join(random.choices(string.ascii_lowercase, k=length))
-+
-+
-+def log_color(msg):
-+    print(f"\033[1;31;40m{msg}\033[0m")
-+
-+
-+if __name__ == "__main__":
-+    input_file = sys.argv[1]
-+
-+    log_color(f"[*] Patch frida-agent: {input_file}")
-+    binary = lief.parse(input_file)
-+
-+    # 随机生成品牌名（5字母，等长替换 frida）
-+    brand = random_alpha(5)
-+    log_color(f"[*] Patch `frida` to `{brand}`")
-+
-+    if not binary:
-+        log_color(f"[*] Not ELF, exit")
-+        sys.exit(1)
-+    else:
-+        # 符号表替换
-+        for symbol in binary.symbols:
-+            if symbol.name == "frida_agent_main":
-+                symbol.name = "main"
-+            if "frida" in symbol.name:
-+                symbol.name = symbol.name.replace("frida", brand)
-+            if "FRIDA" in symbol.name:
-+                symbol.name = symbol.name.replace("FRIDA", brand.upper())
-+
-+        # .rodata 字符串反转
-+        all_patch_string = ["FridaScriptEngine", "GLib-GIO", "GDBusProxy", "GumScript"]
-+
-+        for section in binary.sections:
-+            if section.name != ".rodata":
-+                continue
-+            for patch_str in all_patch_string:
-+                addr_all = section.search_all(patch_str)
-+
-+                for addr in addr_all:
-+                    patch = [ord(n) for n in list(patch_str)[::-1]]
-+                    log_color(
-+                        f"[*] Patching section name={section.name} offset={hex(section.file_offset + addr)} orig:{patch_str} new:{''.join(list(patch_str)[::-1])}")
-+                    binary.patch_address(section.file_offset + addr, patch)
-+
-+        binary.write(input_file)
-+
-+        # 线程名替换（随机生成，等长替换）
-+        thread_gum_js_loop = random_alpha(11)  # gum-js-loop = 11字符
-+        log_color(f"[*] Patch `gum-js-loop` to `{thread_gum_js_loop}`")
-+        os.system(f"sed -b -i s/gum-js-loop/{thread_gum_js_loop}/g {input_file}")
-+
-+        thread_gmain = random_alpha(5)  # gmain = 5字符
-+        log_color(f"[*] Patch `gmain` to `{thread_gmain}`")
-+        os.system(f"sed -b -i s/gmain/{thread_gmain}/g {input_file}")
-+
-+        thread_gdbus = random_alpha(5)  # gdbus = 5字符
-+        log_color(f"[*] Patch `gdbus` to `{thread_gdbus}`")
-+        os.system(f"sed -b -i s/gdbus/{thread_gdbus}/g {input_file}")
-+
-+        # 注：frida-gadget 不可全局 sed，会破坏 injector 的 frida-gadget-tcp- 匹配；gadget.glue 线程名已由 gadget.vala Obfuscate 处理
-+
-+        # 仅做二进制 patch，不改协议（re.frida.*、frida:rpc 等），保证与标准 frida 客户端兼容
-+
-+        # SONAME 残留特征：libfrida-gadget-raw.so / libfrida-agent-raw.so
-+        # 等长替换（frida->brand 均 5 字节），不改变 ELF 结构，安全
-+        for raw_name in ["libfrida-gadget-raw", "libfrida-agent-raw"]:
-+            new_raw = raw_name.replace("frida", brand)
-+            log_color(f"[*] Patch `{raw_name}` to `{new_raw}`")
-+            os.system(f"sed -b -i s/{raw_name}/{new_raw}/g {input_file}")
-+        log_color(f"[*] Patch Finish")

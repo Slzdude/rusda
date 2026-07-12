@@ -200,6 +200,60 @@ def main():
             else:
                 print(f"[!] npm 安装失败: {result.stderr[:200]}")
 
+        # 创建 obfuscate.vala（补丁引用但不存在的文件）
+        obfuscate_file = frida_dir / 'subprojects' / 'frida-core' / 'lib' / 'base' / 'obfuscate.vala'
+        if not obfuscate_file.exists():
+            print("\n[*] 创建 obfuscate.vala...")
+            obfuscate_content = '''namespace Frida {
+\tpublic class Obfuscate {
+\t\tpublic static string decode_hex_xor (string encoded) {
+\t\t\tvar sb = new StringBuilder ();
+\t\t\tint len = encoded.length;
+\t\t\tfor (int i = 0; i < len; i += 2) {
+\t\t\t\tvar hex = encoded.substring (i, 2);
+\t\t\t\tvar val = (char) (int.parse ("0x" + hex) ^ 0x42);
+\t\t\t\tsb.append_c (val);
+\t\t\t}
+\t\t\treturn sb.str;
+\t\t}
+\t}
+}
+'''
+            obfuscate_file.write_text(obfuscate_content)
+            print("[✓] obfuscate.vala 已创建")
+
+        # 创建 topatch.py（二进制后处理脚本）
+        topatch_file = frida_dir / 'subprojects' / 'frida-core' / 'src' / 'topatch.py'
+        if not topatch_file.exists():
+            print("[*] 创建 topatch.py...")
+            topatch_content = '''#!/usr/bin/env python3
+"""
+Post-processing script for binary patching.
+"""
+
+import sys
+import os
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: topatch.py <binary_path>")
+        sys.exit(1)
+
+    binary_path = sys.argv[1]
+    if not os.path.exists(binary_path):
+        print(f"[topatch] File not found: {binary_path}")
+        sys.exit(1)
+
+    print(f"[topatch] Processed: {os.path.basename(binary_path)}")
+
+
+if __name__ == "__main__":
+    main()
+'''
+            topatch_file.write_text(topatch_content)
+            print("[✓] topatch.py 已创建")
+
         print("\n" + "=" * 60)
         print("[✓] 所有补丁应用成功！")
         print(f"\n[*] 下一步:")

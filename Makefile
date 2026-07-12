@@ -40,6 +40,7 @@ reset:
 	@rm -f $(FRIDA_SRC)/subprojects/frida-core/src/topatch.py
 	@rm -rf $(FRIDA_SRC)/subprojects/frida-core/home
 	@rm -f $(FRIDA_SRC)/package-lock.json
+	@rm -rf $(FRIDA_SRC)/build-android-*
 	@echo "[✓] 源码已还原"
 
 # 应用补丁 + 安装依赖

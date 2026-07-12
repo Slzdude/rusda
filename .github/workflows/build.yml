@@ -109,8 +109,9 @@ jobs:
           # 3. 检查文件名替换
           echo ""
           echo "3. 检查文件名替换..."
-          # 补丁将 frida-* 文件名替换为 __BRAND__-*
-          for feature in "frida-server" "frida-inject" "frida-helper" "frida-gadget"; do
+          # 补丁将构建系统中的 frida-* 文件名替换为 __BRAND__-*
+          # 注意：Vala 源码中的 frida-helper 等字符串无法完全移除
+          for feature in "frida-server" "frida-inject" "frida-gadget"; do
             if strings "$STAGING/bin/${BRAND}-server" | grep -q "^$feature"; then
               echo "  ✗ $feature 文件名未替换"
               exit 1

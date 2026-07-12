@@ -1,5 +1,5 @@
 diff --git a/config.json.example b/config.json.example
-index 196f8ce..585792a 100644
+index 196f8ce..379830f 100644
 --- a/config.json.example
 +++ b/config.json.example
 @@ -6,7 +6,7 @@
@@ -7,7 +7,7 @@ index 196f8ce..585792a 100644
              "injected_libraries": [
                  {
 -                    "path": "/data/local/tmp/re.zyg.fri/libgadget.so"
-+                    "path": "/data/local/tmp/__BRAND__/lib__BRAND__gadget.so"
++                    "path": "/data/local/tmp/udafr/libudafrgadget.so"
                  }
              ],
              "child_gating": {
@@ -16,12 +16,12 @@ index 196f8ce..585792a 100644
                  "injected_libraries" : [
                      {
 -                        "path": "/data/local/tmp/re.zyg.fri/libgadget-child.so"
-+                        "path": "/data/local/tmp/__BRAND__/lib__BRAND__gadget-child.so"
++                        "path": "/data/local/tmp/udafr/libudafrgadget-child.so"
                      }
                  ]
              }
 diff --git a/module.gradle b/module.gradle
-index 81b8846..8310d44 100644
+index 81b8846..179ee2d 100644
 --- a/module.gradle
 +++ b/module.gradle
 @@ -1,9 +1,9 @@
@@ -31,8 +31,8 @@ index 81b8846..8310d44 100644
 -    moduleName = "ZygiskFrida"
 -    moduleAuthor = "lico-n"
 -    moduleDescription = "Injects frida gadget via zygisk."
-+    magiskModuleId = "__BRAND__"
-+    moduleName = "__BRAND__"
++    magiskModuleId = "udafr"
++    moduleName = "udafr"
 +    moduleAuthor = "rusda"
 +    moduleDescription = "Rusda runtime module."
      moduleVersion = "v1.9.0"
@@ -48,32 +48,54 @@ index 81b8846..8310d44 100644
 +    gadgetConfigured = true
  }
 diff --git a/module/build.gradle b/module/build.gradle
-index 7292f62..9d4e473 100644
+index 7292f62..b91be89 100644
 --- a/module/build.gradle
 +++ b/module/build.gradle
-@@ -18,7 +18,8 @@ dependencies {
+@@ -18,34 +18,20 @@ dependencies {
      implementation("io.github.vvb2060.ndk:dobby:1.2")
  }
  
 -task downloadFrida(type: Download) {
+-    def downloadArchs = ["arm", "arm64", "x86_64", "x86"]
+-    def magiskArchs = ["arm", "arm64", "x64", "x86"]
+-
+-    def sources = downloadArchs.collect{
+-        arch -> "https://github.com/frida/frida/releases/download/${fridaVersion}/frida-gadget-${fridaVersion}-android-${arch}.so.xz".toString()
+-    }
+-
+-    def outputs = magiskArchs.collect{
+-        arch ->  "libgadget-${arch}.so.xz".toString()
+-    }
+-
+-    def downloads = [sources, outputs].transpose().collectEntries()
+-
+-    src downloads.keySet()
+-    dest "$rootDir/gadget"
+-    overwrite true
+-    onlyIfModified true
+-    quiet true
+-    eachFile { f ->
+-        f.name = downloads[f.sourceURL.toString()]
 +// Skip download if local gadget files exist
 +task downloadGadget {
-     def downloadArchs = ["arm", "arm64", "x86_64", "x86"]
-     def magiskArchs = ["arm", "arm64", "x64", "x86"]
- 
-@@ -43,9 +44,9 @@ task downloadFrida(type: Download) {
++    doLast {
++        def gadgetDir = file("$rootDir/gadget")
++        if (!gadgetDir.exists() || gadgetDir.listFiles()?.findAll { it.name.endsWith('.so.xz') }?.isEmpty()) {
++            throw new GradleException("No local gadget files found in gadget/. Please place lib__BRAND__gadget-*.so.xz files there.")
++        }
+     }
  }
  
  android {
 -    namespace = "zygisk.frida"
-+    namespace = "__BRAND__.mod"
++    namespace = "udafr.mod"
      compileSdkVersion rootProject.ext.targetSdkVersion
 -    ndkVersion '25.2.9519653'
 +    // ndkVersion - use whatever NDK is available
  
      flavorDimensions += "api"
  
-@@ -105,7 +106,7 @@ afterEvaluate {
+@@ -105,7 +91,7 @@ afterEvaluate {
  
          task("prepareMagiskFiles${variantCapped}", type: Sync) {
              dependsOn("assemble$variantCapped")
@@ -82,26 +104,26 @@ index 7292f62..9d4e473 100644
  
              def templatePath = "$rootDir/template/magisk_module"
  
-@@ -152,7 +153,7 @@ afterEvaluate {
+@@ -152,7 +138,7 @@ afterEvaluate {
                  from(templatePath) {
                      include("riru.sh")
                      def tokens = [
 -                            "RIRU_MODULE_LIB_NAME"              : "zygiskfrida",
-+                            "RIRU_MODULE_LIB_NAME"              : "__BRAND__",
++                            "RIRU_MODULE_LIB_NAME"              : "udafr",
                              "RIRU_MODULE_API_VERSION"           : moduleMaxRiruApiVersion.toString(),
                              "RIRU_MODULE_MIN_API_VERSION"       : moduleMinRiruApiVersion.toString(),
                              "RIRU_MODULE_MIN_RIRU_VERSION_NAME" : moduleMinRiruVersionName,
-@@ -164,7 +165,7 @@ afterEvaluate {
+@@ -164,7 +150,7 @@ afterEvaluate {
              doLast {
                  fileTree("$magiskDir/lib").visit { f ->
                      if (!f.directory) return
 -                    def srcPath = Paths.get("${f.file.absolutePath}/libzygiskfrida.so")
-+                    def srcPath = Paths.get("${f.file.absolutePath}/lib__BRAND__.so")
++                    def srcPath = Paths.get("${f.file.absolutePath}/libudafr.so")
                      def dstPath = Paths.get("$magiskDir/lib/${f.path}.so")
                      Files.move(srcPath, dstPath)
                      new File("$magiskDir/lib/${f.path}").deleteDir()
 diff --git a/module/src/jni/Android.mk b/module/src/jni/Android.mk
-index 21653bb..314d983 100644
+index 21653bb..29707fd 100644
 --- a/module/src/jni/Android.mk
 +++ b/module/src/jni/Android.mk
 @@ -5,7 +5,7 @@ include $(CLEAR_VARS)
@@ -109,28 +131,28 @@ index 21653bb..314d983 100644
  
  APP_STL=none
 -LOCAL_MODULE := zygiskfrida
-+LOCAL_MODULE := __BRAND__
++LOCAL_MODULE := udafr
  LOCAL_C_INCLUDES := $(LOCAL_PATH)/xdl/include $(LOCAL_PATH)/include
  LOCAL_SRC_FILES := inject.cpp config.cpp riru_config.cpp child_gating.cpp remapper.cpp $(XDL_FILES:$(LOCAL_PATH)/%=%)
  LOCAL_STATIC_LIBRARIES := cxx dobby
 diff --git a/module/src/jni/child_gating.h b/module/src/jni/child_gating.h
-index 9f04c4d..6fe0838 100644
+index 9f04c4d..9f41334 100644
 --- a/module/src/jni/child_gating.h
 +++ b/module/src/jni/child_gating.h
 @@ -1,8 +1,8 @@
 -#ifndef ZYGISKFRIDA_CHILD_GATING_H
 -#define ZYGISKFRIDA_CHILD_GATING_H
-+#ifndef __BRAND___CHILD_GATING_H
-+#define __BRAND___CHILD_GATING_H
++#ifndef udafr_CHILD_GATING_H
++#define udafr_CHILD_GATING_H
  
  #include "config.h"
  
  void enable_child_gating(child_gating_config const& cfg);
  
 -#endif  // ZYGISKFRIDA_CHILD_GATING_H
-+#endif  // __BRAND___CHILD_GATING_H
++#endif  // udafr_CHILD_GATING_H
 diff --git a/module/src/jni/config.cpp b/module/src/jni/config.cpp
-index 8d58887..0640805 100644
+index 8d58887..35af5f7 100644
 --- a/module/src/jni/config.cpp
 +++ b/module/src/jni/config.cpp
 @@ -137,7 +137,7 @@ static std::vector<std::string> parse_injected_libraries(std::string const &modu
@@ -138,19 +160,19 @@ index 8d58887..0640805 100644
      std::ifstream config_file(config_file_path);
      if (!config_file.is_open()) {
 -        return {module_dir + "/libgadget.so"};
-+        return {module_dir + "/lib__BRAND__gadget.so"};
++        return {module_dir + "/libudafrgadget.so"};
      }
  
      std::vector<std::string> injected_libraries;
 diff --git a/module/src/jni/config.h b/module/src/jni/config.h
-index 416e0dd..4e9810b 100644
+index 416e0dd..106859c 100644
 --- a/module/src/jni/config.h
 +++ b/module/src/jni/config.h
 @@ -1,5 +1,5 @@
 -#ifndef ZYGISKFRIDA_CONFIG_H
 -#define ZYGISKFRIDA_CONFIG_H
-+#ifndef __BRAND___CONFIG_H
-+#define __BRAND___CONFIG_H
++#ifndef udafr_CONFIG_H
++#define udafr_CONFIG_H
  
  #include <memory>
  #include <string>
@@ -159,9 +181,9 @@ index 416e0dd..4e9810b 100644
  std::optional<target_config> parse_advanced_config(std::string const& config, std::string const& app_name);
  
 -#endif  // ZYGISKFRIDA_CONFIG_H
-+#endif  // __BRAND___CONFIG_H
++#endif  // udafr_CONFIG_H
 diff --git a/module/src/jni/inject.cpp b/module/src/jni/inject.cpp
-index 02da075..f7182ce 100644
+index 02da075..be1a239 100644
 --- a/module/src/jni/inject.cpp
 +++ b/module/src/jni/inject.cpp
 @@ -108,7 +108,7 @@ static void inject_libs(target_config const &cfg) {
@@ -169,19 +191,19 @@ index 02da075..f7182ce 100644
  
  bool check_and_inject(std::string const &app_name) {
 -    std::string module_dir = std::string("/data/local/tmp/re.zyg.fri");
-+    std::string module_dir = std::string("/data/local/tmp/__BRAND__");
++    std::string module_dir = std::string("/data/local/tmp/udafr");
  
      std::optional<target_config> cfg = load_config(module_dir, app_name);
      if (!cfg.has_value()) {
 diff --git a/module/src/jni/inject.h b/module/src/jni/inject.h
-index c161797..21c0754 100644
+index c161797..53d64aa 100644
 --- a/module/src/jni/inject.h
 +++ b/module/src/jni/inject.h
 @@ -1,9 +1,9 @@
 -#ifndef ZYGISKFRIDA_INJECT_H
 -#define ZYGISKFRIDA_INJECT_H
-+#ifndef __BRAND___INJECT_H
-+#define __BRAND___INJECT_H
++#ifndef udafr_INJECT_H
++#define udafr_INJECT_H
  
  #include <string>
  
@@ -189,46 +211,46 @@ index c161797..21c0754 100644
  bool check_and_inject(std::string const& app_name);
  
 -#endif  // ZYGISKFRIDA_INJECT_H
-+#endif  // __BRAND___INJECT_H
++#endif  // udafr_INJECT_H
 diff --git a/module/src/jni/log.h b/module/src/jni/log.h
-index 4af9b17..8e00c55 100644
+index 4af9b17..8c43b31 100644
 --- a/module/src/jni/log.h
 +++ b/module/src/jni/log.h
 @@ -1,12 +1,12 @@
 -#ifndef ZYGISKFRIDA_LOG_H
 -#define ZYGISKFRIDA_LOG_H
-+#ifndef __BRAND___LOG_H
-+#define __BRAND___LOG_H
++#ifndef udafr_LOG_H
++#define udafr_LOG_H
  
  #include <android/log.h>
  
 -#define LOG_TAG "ZygiskFrida"
-+#define LOG_TAG "__BRAND__"
++#define LOG_TAG "udafr"
  #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
  #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
  #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
  #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
  
 -#endif  // ZYGISKFRIDA_LOG_H
-+#endif  // __BRAND___LOG_H
++#endif  // udafr_LOG_H
 diff --git a/module/src/jni/remapper.h b/module/src/jni/remapper.h
-index 5fd122e..94cc306 100644
+index 5fd122e..19f0c2a 100644
 --- a/module/src/jni/remapper.h
 +++ b/module/src/jni/remapper.h
 @@ -1,8 +1,8 @@
 -#ifndef ZYGISKFRIDA_REMAPPER_H
 -#define ZYGISKFRIDA_REMAPPER_H
-+#ifndef __BRAND___REMAPPER_H
-+#define __BRAND___REMAPPER_H
++#ifndef udafr_REMAPPER_H
++#define udafr_REMAPPER_H
  
  #include <string>
  
  void remap_lib(std::string lib_path);
  
 -#endif  // ZYGISKFRIDA_REMAPPER_H
-+#endif  // __BRAND___REMAPPER_H
++#endif  // udafr_REMAPPER_H
 diff --git a/template/magisk_module/customize.sh b/template/magisk_module/customize.sh
-index 53ded41..df0156c 100644
+index 53ded41..cc3436a 100644
 --- a/template/magisk_module/customize.sh
 +++ b/template/magisk_module/customize.sh
 @@ -3,12 +3,12 @@ SKIPUNZIP=1
@@ -236,18 +258,18 @@ index 53ded41..df0156c 100644
  MODULE_ID=@MODULE_ID@
  
 -TMP_MODULE_DIR=/data/local/tmp/re.zyg.fri
-+TMP_MODULE_DIR=/data/local/tmp/__BRAND__
++TMP_MODULE_DIR=/data/local/tmp/udafr
  
  if [ "$FLAVOR" != "zygisk" ] && [ "$FLAVOR" != "riru" ]; then
 -  abort "! Unknown ZygiskFrida flavor: $FLAVOR"
-+  abort "! Unknown __BRAND__ flavor: $FLAVOR"
++  abort "! Unknown udafr flavor: $FLAVOR"
  else
 -  ui_print "- ZygiskFrida flavor: $FLAVOR"
-+  ui_print "- __BRAND__ flavor: $FLAVOR"
++  ui_print "- udafr flavor: $FLAVOR"
  fi
  
  if [ "$ARCH" != "arm" ] && [ "$ARCH" != "arm64" ] && [ "$ARCH" != "x86" ] && [ "$ARCH" != "x64" ]; then
-@@ -81,21 +81,21 @@ fi
+@@ -81,21 +81,26 @@ fi
  ui_print "- Extracting bundled frida gadget"
  
  mkdir -p "$TMP_MODULE_DIR"
@@ -256,11 +278,11 @@ index 53ded41..df0156c 100644
 -rm "$TMP_MODULE_DIR/libgadget.so"
 -$BUSYBOX_BIN unxz "$TMP_MODULE_DIR/libgadget.so.xz"
 -rm "$TMP_MODULE_DIR/libgadget.so.xz"
-+extract "$ZIPFILE" "gadget/lib__BRAND__gadget-$ARCH.so.xz" "$TMP_MODULE_DIR" true
-+mv "$TMP_MODULE_DIR/lib__BRAND__gadget-$ARCH.so.xz" "$TMP_MODULE_DIR/lib__BRAND__gadget.so.xz"
-+rm "$TMP_MODULE_DIR/lib__BRAND__gadget.so"
-+$BUSYBOX_BIN unxz "$TMP_MODULE_DIR/lib__BRAND__gadget.so.xz"
-+rm "$TMP_MODULE_DIR/lib__BRAND__gadget.so.xz"
++extract "$ZIPFILE" "gadget/libudafrgadget-$ARCH.so.xz" "$TMP_MODULE_DIR" true
++mv "$TMP_MODULE_DIR/libudafrgadget-$ARCH.so.xz" "$TMP_MODULE_DIR/libudafrgadget.so.xz"
++rm "$TMP_MODULE_DIR/libudafrgadget.so"
++$BUSYBOX_BIN unxz "$TMP_MODULE_DIR/libudafrgadget.so.xz"
++rm "$TMP_MODULE_DIR/libudafrgadget.so.xz"
  
  if [ "$IS64BIT" = true ]; then
    ARCH32="arm"
@@ -271,18 +293,23 @@ index 53ded41..df0156c 100644
 -  rm "$TMP_MODULE_DIR/libgadget32.so"
 -  $BUSYBOX_BIN unxz "$TMP_MODULE_DIR/libgadget32.so.xz"
 -  rm "$TMP_MODULE_DIR/libgadget32.so.xz"
-+  extract "$ZIPFILE" "gadget/lib__BRAND__gadget-$ARCH32.so.xz" "$TMP_MODULE_DIR" true
-+  mv "$TMP_MODULE_DIR/lib__BRAND__gadget-$ARCH32.so.xz" "$TMP_MODULE_DIR/lib__BRAND__gadget32.so.xz"
-+  rm "$TMP_MODULE_DIR/lib__BRAND__gadget32.so"
-+  $BUSYBOX_BIN unxz "$TMP_MODULE_DIR/lib__BRAND__gadget32.so.xz"
-+  rm "$TMP_MODULE_DIR/lib__BRAND__gadget32.so.xz"
++  # 尝试提取 32 位 gadget（可选）
++  if unzip -l "$ZIPFILE" "gadget/libudafrgadget-$ARCH32.so.xz" > /dev/null 2>&1; then
++    extract "$ZIPFILE" "gadget/libudafrgadget-$ARCH32.so.xz" "$TMP_MODULE_DIR" true
++    mv "$TMP_MODULE_DIR/libudafrgadget-$ARCH32.so.xz" "$TMP_MODULE_DIR/libudafrgadget32.so.xz"
++    rm -f "$TMP_MODULE_DIR/libudafrgadget32.so"
++    $BUSYBOX_BIN unxz "$TMP_MODULE_DIR/libudafrgadget32.so.xz"
++    rm -f "$TMP_MODULE_DIR/libudafrgadget32.so.xz"
++  else
++    ui_print "- 32-bit gadget not found, skipping"
++  fi
  fi
  
  extract "$ZIPFILE" "config.json.example" "$TMP_MODULE_DIR" true
 diff --git a/template/magisk_module/uninstall.sh b/template/magisk_module/uninstall.sh
-index 36ded92..f48a3cf 100644
+index 36ded92..bcfe67b 100644
 --- a/template/magisk_module/uninstall.sh
 +++ b/template/magisk_module/uninstall.sh
 @@ -1 +1 @@
 -rm -rf /data/local/tmp/re.zyg.fri
-+rm -rf /data/local/tmp/__BRAND__
++rm -rf /data/local/tmp/udafr

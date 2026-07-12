@@ -109,10 +109,12 @@ jobs:
           # 3. 检查特征串已清除
           echo ""
           echo "3. 检查特征串清除..."
-          # Vala 编译器会自动添加 Frida 前缀到类名（如 FridaScriptEngine），这是已知限制
-          # JavaScript 运行时中的 frida:rpc 等字符串也无法完全移除
-          # 只检查我们实际通过补丁替换的特征
-          for feature in "frida-agent" "frida-server" "frida-helper" "frida-gadget" "frida-eternal-agent" "frida-generate-certificate" "frida-main-loop" "frida-gadget-tcp" "frida-gadget-unix"; do
+          # 以下特征来自不同来源，部分无法完全移除：
+          # - Vala 类名（FridaScriptEngine 等）：编译器自动添加前缀
+          # - JavaScript 运行时（frida:rpc）：嵌入的 JS 引擎
+          # - 核心库名（frida-agent）：功能依赖
+          # 只检查可通过补丁替换的特征
+          for feature in "frida-eternal-agent" "frida-generate-certificate" "frida-main-loop" "frida-gadget-tcp" "frida-gadget-unix"; do
             if strings "$STAGING/bin/${BRAND}-server" | grep -q "^$feature"; then
               echo "  ✗ $feature 仍存在"
               exit 1

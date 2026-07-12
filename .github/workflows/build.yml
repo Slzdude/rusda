@@ -158,6 +158,9 @@ jobs:
           BRAND=$(grep -oP "helper_name = '\K[^']*" subprojects/frida-core/meson.build | sed 's/-helper//')
           echo "打包 $BRAND $VERSION..."
 
+          # 保存品牌名供后续使用
+          echo "$BRAND" > $OUTPUT/brand.txt
+
           # Package server
           if [ -f "$STAGING/bin/${BRAND}-server" ]; then
             xz -c -T0 "$STAGING/bin/${BRAND}-server" > "$OUTPUT/${BRAND}-server-${VERSION}-android-${ARCH}.xz"
@@ -212,8 +215,13 @@ jobs:
 
       - name: Extract brand from artifacts
         run: |
-          # Extract brand from artifact filename: {brand}-gadget-{version}-android-{arch}.so.xz
-          BRAND=$(ls dist-android/ | grep -oP '^[^-]+(?=-gadget)' | head -1)
+          # 优先从 brand.txt 读取品牌名
+          if [ -f dist-android/brand.txt ]; then
+            BRAND=$(cat dist-android/brand.txt | tr -d '[:space:]')
+          else
+            # 回退：从文件名提取
+            BRAND=$(ls dist-android/ | grep -oP '^[^-]+(?=-gadget)' | head -1)
+          fi
 
           if [ -z "$BRAND" ]; then
             echo "ERROR: Could not extract brand from artifacts"

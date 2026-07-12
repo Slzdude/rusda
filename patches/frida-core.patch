@@ -107,7 +107,7 @@ index f99f31f5..3449f4af 100644
  
  		private void keep_running_eternalized () {
 -			agent_gthread = new Thread<bool> ("frida-eternal-agent", () => {
-+			agent_gthread = new Thread<bool> (Obfuscate.decode_hex_xor ("33273c313478302130273b3439783432303b21"), () => {
++			agent_gthread = new Thread<bool> (Obfuscate.decode_hex_xor ("24302b26236f273627302c232e6f2325272c36"), () => {
  				var ignore_scope = new ThreadIgnoreScope (FRIDA_THREAD);
  
  				agent_tid = Gum.Process.get_current_thread_id ();
@@ -116,7 +116,7 @@ index f99f31f5..3449f4af 100644
  				}
  			} else {
 -				agent_gthread = new Thread<bool> ("frida-eternal-agent", () => {
-+				agent_gthread = new Thread<bool> (Obfuscate.decode_hex_xor ("33273c313478302130273b3439783432303b21"), () => {
++				agent_gthread = new Thread<bool> (Obfuscate.decode_hex_xor ("24302b26236f273627302c232e6f2325272c36"), () => {
  					var ignore_scope = new ThreadIgnoreScope (FRIDA_THREAD);
  					run_after_transition ();
  					ignore_scope = null;
@@ -125,7 +125,7 @@ index f99f31f5..3449f4af 100644
  				}
  			} else {
 -				agent_gthread = new Thread<bool> ("frida-eternal-agent", () => {
-+				agent_gthread = new Thread<bool> (Obfuscate.decode_hex_xor ("33273c313478302130273b3439783432303b21"), () => {
++				agent_gthread = new Thread<bool> (Obfuscate.decode_hex_xor ("24302b26236f273627302c232e6f2325272c36"), () => {
  					var ignore_scope = new ThreadIgnoreScope (FRIDA_THREAD);
  					run_after_transition ();
  					ignore_scope = null;
@@ -134,7 +134,7 @@ index f99f31f5..3449f4af 100644
  				emulated_bridge_state = new BridgeState (parameters.str);
  
 -				emulated_worker = new Thread<void> ("frida-agent-emulated", run_emulated_agent);
-+				emulated_worker = new Thread<void> (Obfuscate.decode_hex_xor ("33273c3134783432303b21783038203934213031"), run_emulated_agent);
++				emulated_worker = new Thread<void> (Obfuscate.decode_hex_xor ("24302b26236f2f232b2c6f2e2d2d32"), run_emulated_agent);
  
  				var connection = yield new DBusConnection (stream, ServerGuid.HOST_SESSION_SERVICE,
  					AUTHENTICATION_SERVER | AUTHENTICATION_ALLOW_ANONYMOUS, null, cancellable);
@@ -172,7 +172,7 @@ index abe5255d..c4a22480 100644
  		string? result_key_pem = null;
  
 -		new Thread<bool> ("frida-generate-certificate", () => {
-+		new Thread<bool> (Obfuscate.decode_hex_xor ("33273c31347832303b302734213078363027213c333c36342130"), () => {
++		new Thread<bool> (Obfuscate.decode_hex_xor ("24302b26236f25272c27302336276f212730362b242b21233627"), () => {
  			uint8[] local_cert_der;
  			string local_cert_pem;
  			string local_key_pem;
@@ -185,7 +185,7 @@ index 97edecf3..edd34cc4 100644
  		}
  
 +		private static string get_rpc_str (bool quoted) {
-+			var s = Obfuscate.decode_hex_xor ("33273c31346f272536");
++			var s = Obfuscate.decode_hex_xor ("24302b262378303221");
 +			return quoted ? "\"" + s + "\"" : s;
 +		}
 +
@@ -228,7 +228,7 @@ index 8e7e4836..7a1079e3 100644
  
  			throw (Error) new GLib.Error.literal (
 -				Quark.from_string ("frida-error-quark"),
-+				Quark.from_string (Obfuscate.decode_hex_xor ("33273c3134783027273a2778242034273e")),
++				Quark.from_string (Obfuscate.decode_hex_xor ("24302b26236f2325272c366f272f372e23362726")),
  				translate_error (domain, code, description),
  				description);
  		}
@@ -241,7 +241,7 @@ index 230284c7..89894102 100644
  				if (inet_address != null) {
  					uint16 listen_port = inet_address.get_port ();
 -					Environment.set_thread_name ("frida-gadget-tcp-%u".printf (listen_port));
-+					Environment.set_thread_name ("%s%u".printf (Obfuscate.decode_hex_xor ("33273c3134783234313230217821362578"), listen_port));
++					Environment.set_thread_name ("%s%u".printf (Obfuscate.decode_hex_xor ("24302b26236f2523262527366f3621326f"), listen_port));
  					if (request != null) {
  						request.set_value (listen_port);
  					} else {
@@ -250,7 +250,7 @@ index 230284c7..89894102 100644
  #if !WINDOWS
  					var unix_address = (UnixSocketAddress) listen_address;
 -					Environment.set_thread_name ("frida-gadget-unix");
-+					Environment.set_thread_name (Obfuscate.decode_hex_xor ("33273c31347832343132302178203b3c2d"));
++					Environment.set_thread_name (Obfuscate.decode_hex_xor ("24302b26236f2523262527366f372c2b3a"));
  					if (request != null) {
  						request.set_value (0);
  					} else {

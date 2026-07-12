@@ -1,0 +1,35 @@
+diff --git a/src/linux/helpers/zymbiote.c b/src/linux/helpers/zymbiote.c
+index b9fa5268..d024ab7a 100644
+--- a/src/linux/helpers/zymbiote.c
++++ b/src/linux/helpers/zymbiote.c
+@@ -37,7 +37,7 @@ struct _ZymbioteContext
+ 
+ ZymbioteContext zymbiote =
+ {
+-  .socket_path = "/frida-zymbiote-00000000000000000000000000000000",
++  .socket_path = "/__PLACEHOLDER_ZYMBIOTE__-00000000000000000000000000000000",
+ };
+ 
+ int frida_zymbiote_replacement_setargv0 (JNIEnv * env, jobject clazz, jstring name);
+diff --git a/src/linux/linux-host-session.vala b/src/linux/linux-host-session.vala
+index 44bd9400..e298cfc1 100644
+--- a/src/linux/linux-host-session.vala
++++ b/src/linux/linux-host-session.vala
+@@ -1528,7 +1528,7 @@ namespace Frida {
+ 			ensure_request = new Promise<bool> ();
+ 
+ 			if (server_name == null) {
+-				string name = "/frida-zymbiote-" + Uuid.string_random ().replace ("-", "");
++				string name = "/__PLACEHOLDER_ZYMBIOTE__-" + Uuid.string_random ().replace ("-", "");
+ 				var address = new UnixSocketAddress.with_type (name, -1, UnixSocketAddressType.ABSTRACT);
+ 
+ 				try {
+@@ -1954,7 +1954,7 @@ namespace Frida {
+ 
+ 			unowned uint8[] payload_template = blob.data[text.file_offset:text.file_offset + text.file_size];
+ 
+-			void * p = memmem (payload_template, "/frida-zymbiote-00000000000000000000000000000000".data);
++			void * p = memmem (payload_template, "/__PLACEHOLDER_ZYMBIOTE__-00000000000000000000000000000000".data);
+ 			assert (p != null);
+ 			size_t data_offset = (uint8 *) p - (uint8 *) payload_template;
+ 

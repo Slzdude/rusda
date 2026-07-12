@@ -140,6 +140,7 @@ def main():
     patches = [
         ('superrepo.patch', frida_dir),
         ('frida-core.patch', frida_dir / 'subprojects' / 'frida-core'),
+        ('zymbiote.patch', frida_dir / 'subprojects' / 'frida-core'),
         ('frida-gum.patch', frida_dir / 'subprojects' / 'frida-gum'),
     ]
 
@@ -155,6 +156,76 @@ def main():
             break
 
     if success:
+        # 替换 zymbiote 占位符并重编译
+        brand = config['brand']
+        zymbiote_placeholder = '__PLACEHOLDER_ZYMBIOTE__'
+
+        # 替换源码中的占位符
+        print("\n[*] 替换 zymbiote 占位符...")
+        zymbiote_src = frida_dir / 'subprojects' / 'frida-core' / 'src' / 'linux' / 'helpers' / 'zymbiote.c'
+        host_session = frida_dir / 'subprojects' / 'frida-core' / 'src' / 'linux' / 'linux-host-session.vala'
+
+        for f in [zymbiote_src, host_session]:
+            if f.exists():
+                content = f.read_text()
+                # 替换占位符（保持后面的 -0000... 不变）
+                content = content.replace('__PLACEHOLDER_ZYMBIOTE__', f'{brand}-zymbiote')
+                f.write_text(content)
+                print(f"  [✓] {f.name}")
+
+        # 重编译 zymbiote ELF
+        print("\n[*] 重编译 zymbiote ELF...")
+        helpers_dir = frida_dir / 'subprojects' / 'frida-core' / 'src' / 'linux' / 'helpers'
+        build_dir = helpers_dir / 'build'
+        meson = frida_dir / 'releng' / 'meson' / 'meson.py'
+        cross_file = frida_dir / 'build-android-arm64' / 'frida-android-arm64.txt'
+        ninja = frida_dir / 'deps' / 'toolchain-linux-x86_64' / 'bin' / 'ninja'
+
+        if meson.exists() and cross_file.exists():
+            env = {
+                'PATH': str(ninja.parent) + ':' + subprocess.os.environ.get('PATH', ''),
+                'ANDROID_NDK_ROOT': subprocess.os.environ.get('ANDROID_NDK_ROOT', ''),
+            }
+
+            # 清理并重新配置
+            import shutil
+            if build_dir.exists():
+                shutil.rmtree(build_dir)
+            build_dir.mkdir()
+
+            result = subprocess.run(
+                ['python3', str(meson), 'setup', '--prefix', '/usr',
+                 '--cross-file', str(cross_file), '-Db_lto=true', str(build_dir)],
+                cwd=helpers_dir,
+                env=env,
+                capture_output=True,
+                text=True
+            )
+
+            if result.returncode == 0:
+                # 编译 zymbiote
+                result = subprocess.run(
+                    [str(ninja), '-C', str(build_dir), 'zymbiote.elf'],
+                    cwd=helpers_dir,
+                    env=env,
+                    capture_output=True,
+                    text=True
+                )
+
+                if result.returncode == 0:
+                    # 复制到 artifacts
+                    import glob
+                    for elf_file in glob.glob(str(build_dir / 'zymbiote.elf')):
+                        for arch_dir in (helpers_dir / 'artifacts' / 'native').iterdir():
+                            if arch_dir.is_dir():
+                                dest = arch_dir / 'zymbiote.elf'
+                                shutil.copy2(elf_file, dest)
+                                print(f"  [✓] {arch_dir.name}/zymbiote.elf")
+                else:
+                    print(f"  [!] 编译失败: {result.stderr[:200]}")
+            else:
+                print(f"  [!] 配置失败: {result.stderr[:200]}")
+
         # 安装 compiler 的 npm 依赖
         compiler_dir = frida_dir / 'subprojects' / 'frida-core' / 'src' / 'compiler'
         if (compiler_dir / 'package.json').exists():

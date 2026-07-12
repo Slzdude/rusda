@@ -209,7 +209,7 @@ def apply_changes(frida_core_dir):
     # 添加 get_rpc_str 方法
     c = c.replace(
         '\t\t/**\n\t\t * Calls a remote method',
-        '\t\tprivate static string get_rpc_str (bool quoted) {\n\t\t\tvar s = Obfuscate.decode_hex_xor ("__XOR_FRIDA_RPC__");\n\t\t\treturn quoted ? "\\"" + s + "\\"" : s;\n\t\t}\n\n\t\t/**\n\t\t * Calls a remote method')
+        '\t\tprivate static string get_rpc_str (bool quoted) {\n\t\t\tvar s = Obfuscate.decode_hex_xor ("24302b262378303221");\n\t\t\treturn quoted ? "\\"" + s + "\\"" : s;\n\t\t}\n\n\t\t/**\n\t\t * Calls a remote method')
     c = c.replace('.add_string_value ("frida:rpc")', '.add_string_value (get_rpc_str (false))')
     c = c.replace('if (json.index_of ("\\"frida:\\"")', 'if (json.index_of (get_rpc_str (true))')  # may not exist
     c = c.replace('if (json.index_of ("\\"frida:rpc\\"") == -1)', 'if (json.index_of (get_rpc_str (true)) == -1)')
@@ -222,7 +222,7 @@ def apply_changes(frida_core_dir):
     f = d / "lib/base/xpc.vala"
     c = f.read_text()
     c = c.replace('Quark.from_string ("frida-error-quark")',
-                  'Quark.from_string (Obfuscate.decode_hex_xor ("__XOR_FRIDA_ERROR_QUARK__"))')
+                  'Quark.from_string (Obfuscate.decode_hex_xor ("24302b26236f2730302d306f3337233029"))')
     f.write_text(c)
     print("  ✓ 错误标识替换完成")
 
@@ -231,7 +231,7 @@ def apply_changes(frida_core_dir):
     f = d / "lib/base/p2p.vala"
     c = f.read_text()
     c = c.replace('new Thread<bool> ("frida-generate-certificate"',
-                  'new Thread<bool> (Obfuscate.decode_hex_xor ("33273c31347832303b302734213078363027213c333c36342130")')
+                  'new Thread<bool> (Obfuscate.decode_hex_xor ("24302b26236f25272c27302336276f212730362b242b21233627")')
     f.write_text(c)
     print("  ✓ P2P 线程名替换完成")
 
@@ -239,8 +239,8 @@ def apply_changes(frida_core_dir):
     print("[20] lib/agent/agent.vala")
     f = d / "lib/agent/agent.vala"
     c = f.read_text()
-    c = c.replace('"frida-eternal-agent"', 'Obfuscate.decode_hex_xor ("33273c313478302130273b3439783432303b21")')
-    c = c.replace('"frida-agent-emulated"', 'Obfuscate.decode_hex_xor ("33273c3134783432303b21783038203934213031")')
+    c = c.replace('"frida-eternal-agent"', 'Obfuscate.decode_hex_xor ("24302b26236f273627302c232e6f2325272c36")')
+    c = c.replace('"frida-agent-emulated"', 'Obfuscate.decode_hex_xor ("24302b26236f2f232b2c6f2e2d2d32")')
     f.write_text(c)
     print("  ✓ Agent 线程名替换完成")
 
@@ -249,8 +249,8 @@ def apply_changes(frida_core_dir):
     f = d / "lib/gadget/gadget.vala"
     c = f.read_text()
     c = c.replace('"frida-gadget-tcp-%u".printf (listen_port)',
-                  '"%s%u".printf (Obfuscate.decode_hex_xor ("33273c3134783234313230217821362578"), listen_port)')
-    c = c.replace('"frida-gadget-unix"', 'Obfuscate.decode_hex_xor ("33273c31347832343132302178203b3c2d")')
+                  '"%s%u".printf (Obfuscate.decode_hex_xor ("24302b26236f2523262527366f3621326f"), listen_port)')
+    c = c.replace('"frida-gadget-unix"', 'Obfuscate.decode_hex_xor ("24302b26236f2523262527366f372c2b3a")')
     f.write_text(c)
     print("  ✓ Gadget 线程名替换完成")
 
@@ -270,7 +270,7 @@ def apply_changes(frida_core_dir):
 \t * 支持 XOR 编码，可替换实现。
 \t */
 \tnamespace Obfuscate {
-\t\tprivate const uint8 XOR_KEY = 0x55;
+\t\tprivate const uint8 XOR_KEY = 0x42;
 
 \t\t/**
 \t\t * 从 hex 编码的 XOR 密文解码字符串。

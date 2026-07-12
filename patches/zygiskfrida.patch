@@ -34,7 +34,7 @@ index 81b8846..8310d44 100644
 +    magiskModuleId = "__BRAND__"
 +    moduleName = "__BRAND__"
 +    moduleAuthor = "rusda"
-+    {moduleDescription = "Rusda runtime module."
++    moduleDescription = "Rusda runtime module."
      moduleVersion = "v1.9.0"
      moduleVersionCode = 12
  

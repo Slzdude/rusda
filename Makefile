@@ -11,7 +11,7 @@ JOBS = $(shell nproc 2>/dev/null || echo 4)
 # 从构建产物中读取品牌名
 GET_BRAND = grep -oP "helper_name = '\K[^']*" $(FRIDA_SRC)/subprojects/frida-core/meson.build 2>/dev/null | sed 's/-helper//'
 
-.PHONY: all help reset apply build package clean full-reset quick install-device test
+.PHONY: all help reset apply build package clean full-reset quick install-device test zygisk
 
 help:
 	@echo "rusda 构建系统"
@@ -24,6 +24,7 @@ help:
 	@echo "  make clean        # 清理构建产物"
 	@echo "  make full-reset   # 清理 + 还原源码"
 	@echo "  make test         # 构建 + 安装到设备 + 测试"
+	@echo "  make zygisk       # 构建 Zygisk Magisk 模块"
 	@echo ""
 	@echo "可用架构: arm, arm64, x86, x86_64"
 
@@ -123,6 +124,15 @@ endif
 		export PATH=$(NDK_ROOT):$$PATH && \
 		make -j$(JOBS) 2>&1 | tail -20 || true
 	@echo "[✓] 编译完成"
+
+# 构建 Zygisk 模块（需要先完成 package）
+zygisk: package
+	@echo "=== 构建 Zygisk 模块 ==="
+	@BRAND=$$($(GET_BRAND)); \
+	python3 $(RUSDA_DIR)/tools/apply_zygisk_patch.py --brand $$BRAND --dist-dir $(RUSDA_DIR)/dist-android
+	@cd ZygiskFrida && ./gradlew :module:assembleZygiskRelease 2>&1 | tail -10
+	@echo "[✓] Zygisk 模块构建完成"
+	@ls -lh ZygiskFrida/out/*.zip 2>/dev/null
 
 # 安装到设备并测试
 test: package

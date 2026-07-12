@@ -149,7 +149,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
-          arch: arm64
+          arch: arm64-v8a
           profile: Nexus 6
           script: |
             echo "=== Android Emulator 测试 ==="

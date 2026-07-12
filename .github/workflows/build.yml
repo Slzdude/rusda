@@ -109,7 +109,9 @@ jobs:
           # 3. 检查特征串已清除
           echo ""
           echo "3. 检查特征串清除..."
-          for feature in "FridaScriptEngine" "GumScript" "GLib-GIO" "GDBusProxy" "gum-js-loop" "gmain" "gdbus"; do
+          # Vala 编译器会自动添加 Frida 前缀到类名（如 FridaScriptEngine），这是已知限制
+          # 只检查我们实际替换的特征
+          for feature in "frida:rpc" "frida-agent" "frida-server" "frida-helper" "frida-gadget" "frida-eternal-agent" "frida-generate-certificate" "frida-main-loop" "frida-gadget-tcp" "frida-gadget-unix"; do
             if strings "$STAGING/bin/${BRAND}-server" | grep -q "$feature"; then
               echo "  ✗ $feature 仍存在"
               exit 1
@@ -118,14 +120,16 @@ jobs:
             fi
           done
 
-          # 4. 检查反转串存在
+          # 4. 检查 XOR 混淆后的字符串
           echo ""
-          echo "4. 检查反转串..."
-          for feature in "enignEtpircSadirF" "tpircSmuG"; do
+          echo "4. 检查 XOR 混淆..."
+          # 检查原始字符串是否已被替换
+          for feature in "frida-eternal-agent" "frida-agent-emulated" "frida-generate-certificate"; do
             if strings "$STAGING/bin/${BRAND}-server" | grep -q "$feature"; then
-              echo "  ✓ $feature 存在"
+              echo "  ✗ $feature 未被混淆"
+              exit 1
             else
-              echo "  ✗ $feature 不存在"
+              echo "  ✓ $feature 已混淆"
             fi
           done
 

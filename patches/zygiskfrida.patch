@@ -1,5 +1,5 @@
 diff --git a/config.json.example b/config.json.example
-index 196f8ce..43e87eb 100644
+index 196f8ce..585792a 100644
 --- a/config.json.example
 +++ b/config.json.example
 @@ -6,7 +6,7 @@
@@ -7,7 +7,7 @@ index 196f8ce..43e87eb 100644
              "injected_libraries": [
                  {
 -                    "path": "/data/local/tmp/re.zyg.fri/libgadget.so"
-+                    "path": "/data/local/tmp/quymh/libquymhgadget.so"
++                    "path": "/data/local/tmp/__BRAND__/lib__BRAND__gadget.so"
                  }
              ],
              "child_gating": {
@@ -16,12 +16,12 @@ index 196f8ce..43e87eb 100644
                  "injected_libraries" : [
                      {
 -                        "path": "/data/local/tmp/re.zyg.fri/libgadget-child.so"
-+                        "path": "/data/local/tmp/quymh/libquymhgadget-child.so"
++                        "path": "/data/local/tmp/__BRAND__/lib__BRAND__gadget-child.so"
                      }
                  ]
              }
 diff --git a/module.gradle b/module.gradle
-index 81b8846..218f383 100644
+index 81b8846..0f276a7 100644
 --- a/module.gradle
 +++ b/module.gradle
 @@ -1,9 +1,9 @@
@@ -31,8 +31,8 @@ index 81b8846..218f383 100644
 -    moduleName = "ZygiskFrida"
 -    moduleAuthor = "lico-n"
 -    moduleDescription = "Injects frida gadget via zygisk."
-+    magiskModuleId = "quymh"
-+    moduleName = "quymh"
++    magiskModuleId = "__BRAND__"
++    moduleName = "__BRAND__"
 +    moduleAuthor = "rusda"
 +    moduleDescription = "Rusda runtime module."
      moduleVersion = "v1.9.0"
@@ -48,7 +48,7 @@ index 81b8846..218f383 100644
 +    gadgetConfigured = true
  }
 diff --git a/module/build.gradle b/module/build.gradle
-index 7292f62..b56aa6b 100644
+index 7292f62..c3b897d 100644
 --- a/module/build.gradle
 +++ b/module/build.gradle
 @@ -18,34 +18,20 @@ dependencies {
@@ -81,7 +81,7 @@ index 7292f62..b56aa6b 100644
 +    doLast {
 +        def gadgetDir = file("$rootDir/gadget")
 +        if (!gadgetDir.exists() || gadgetDir.listFiles()?.findAll { it.name.endsWith('.so.xz') }?.isEmpty()) {
-+            throw new GradleException("No local gadget files found in gadget/. Please place libquymhgadget-*.so.xz files there.")
++            throw new GradleException("No local gadget files found in gadget/. Please place lib__BRAND__gadget-*.so.xz files there.")
 +        }
      }
  }
@@ -109,7 +109,7 @@ index 7292f62..b56aa6b 100644
                      include("riru.sh")
                      def tokens = [
 -                            "RIRU_MODULE_LIB_NAME"              : "zygiskfrida",
-+                            "RIRU_MODULE_LIB_NAME"              : "quymh",
++                            "RIRU_MODULE_LIB_NAME"              : "__BRAND__",
                              "RIRU_MODULE_API_VERSION"           : moduleMaxRiruApiVersion.toString(),
                              "RIRU_MODULE_MIN_API_VERSION"       : moduleMinRiruApiVersion.toString(),
                              "RIRU_MODULE_MIN_RIRU_VERSION_NAME" : moduleMinRiruVersionName,
@@ -118,12 +118,12 @@ index 7292f62..b56aa6b 100644
                  fileTree("$magiskDir/lib").visit { f ->
                      if (!f.directory) return
 -                    def srcPath = Paths.get("${f.file.absolutePath}/libzygiskfrida.so")
-+                    def srcPath = Paths.get("${f.file.absolutePath}/libquymh.so")
++                    def srcPath = Paths.get("${f.file.absolutePath}/lib__BRAND__.so")
                      def dstPath = Paths.get("$magiskDir/lib/${f.path}.so")
                      Files.move(srcPath, dstPath)
                      new File("$magiskDir/lib/${f.path}").deleteDir()
 diff --git a/module/src/jni/Android.mk b/module/src/jni/Android.mk
-index 21653bb..ccd30f4 100644
+index 21653bb..314d983 100644
 --- a/module/src/jni/Android.mk
 +++ b/module/src/jni/Android.mk
 @@ -5,7 +5,7 @@ include $(CLEAR_VARS)
@@ -131,28 +131,28 @@ index 21653bb..ccd30f4 100644
  
  APP_STL=none
 -LOCAL_MODULE := zygiskfrida
-+LOCAL_MODULE := quymh
++LOCAL_MODULE := __BRAND__
  LOCAL_C_INCLUDES := $(LOCAL_PATH)/xdl/include $(LOCAL_PATH)/include
  LOCAL_SRC_FILES := inject.cpp config.cpp riru_config.cpp child_gating.cpp remapper.cpp $(XDL_FILES:$(LOCAL_PATH)/%=%)
  LOCAL_STATIC_LIBRARIES := cxx dobby
 diff --git a/module/src/jni/child_gating.h b/module/src/jni/child_gating.h
-index 9f04c4d..45b1433 100644
+index 9f04c4d..6fe0838 100644
 --- a/module/src/jni/child_gating.h
 +++ b/module/src/jni/child_gating.h
 @@ -1,8 +1,8 @@
 -#ifndef ZYGISKFRIDA_CHILD_GATING_H
 -#define ZYGISKFRIDA_CHILD_GATING_H
-+#ifndef quymh_CHILD_GATING_H
-+#define quymh_CHILD_GATING_H
++#ifndef __BRAND___CHILD_GATING_H
++#define __BRAND___CHILD_GATING_H
  
  #include "config.h"
  
  void enable_child_gating(child_gating_config const& cfg);
  
 -#endif  // ZYGISKFRIDA_CHILD_GATING_H
-+#endif  // quymh_CHILD_GATING_H
++#endif  // __BRAND___CHILD_GATING_H
 diff --git a/module/src/jni/config.cpp b/module/src/jni/config.cpp
-index 8d58887..b443962 100644
+index 8d58887..0640805 100644
 --- a/module/src/jni/config.cpp
 +++ b/module/src/jni/config.cpp
 @@ -137,7 +137,7 @@ static std::vector<std::string> parse_injected_libraries(std::string const &modu
@@ -160,19 +160,19 @@ index 8d58887..b443962 100644
      std::ifstream config_file(config_file_path);
      if (!config_file.is_open()) {
 -        return {module_dir + "/libgadget.so"};
-+        return {module_dir + "/libquymhgadget.so"};
++        return {module_dir + "/lib__BRAND__gadget.so"};
      }
  
      std::vector<std::string> injected_libraries;
 diff --git a/module/src/jni/config.h b/module/src/jni/config.h
-index 416e0dd..7df41ee 100644
+index 416e0dd..4e9810b 100644
 --- a/module/src/jni/config.h
 +++ b/module/src/jni/config.h
 @@ -1,5 +1,5 @@
 -#ifndef ZYGISKFRIDA_CONFIG_H
 -#define ZYGISKFRIDA_CONFIG_H
-+#ifndef quymh_CONFIG_H
-+#define quymh_CONFIG_H
++#ifndef __BRAND___CONFIG_H
++#define __BRAND___CONFIG_H
  
  #include <memory>
  #include <string>
@@ -181,9 +181,9 @@ index 416e0dd..7df41ee 100644
  std::optional<target_config> parse_advanced_config(std::string const& config, std::string const& app_name);
  
 -#endif  // ZYGISKFRIDA_CONFIG_H
-+#endif  // quymh_CONFIG_H
++#endif  // __BRAND___CONFIG_H
 diff --git a/module/src/jni/inject.cpp b/module/src/jni/inject.cpp
-index 02da075..97c5a6b 100644
+index 02da075..f7182ce 100644
 --- a/module/src/jni/inject.cpp
 +++ b/module/src/jni/inject.cpp
 @@ -108,7 +108,7 @@ static void inject_libs(target_config const &cfg) {
@@ -191,19 +191,19 @@ index 02da075..97c5a6b 100644
  
  bool check_and_inject(std::string const &app_name) {
 -    std::string module_dir = std::string("/data/local/tmp/re.zyg.fri");
-+    std::string module_dir = std::string("/data/local/tmp/quymh");
++    std::string module_dir = std::string("/data/local/tmp/__BRAND__");
  
      std::optional<target_config> cfg = load_config(module_dir, app_name);
      if (!cfg.has_value()) {
 diff --git a/module/src/jni/inject.h b/module/src/jni/inject.h
-index c161797..6a32eb3 100644
+index c161797..21c0754 100644
 --- a/module/src/jni/inject.h
 +++ b/module/src/jni/inject.h
 @@ -1,9 +1,9 @@
 -#ifndef ZYGISKFRIDA_INJECT_H
 -#define ZYGISKFRIDA_INJECT_H
-+#ifndef quymh_INJECT_H
-+#define quymh_INJECT_H
++#ifndef __BRAND___INJECT_H
++#define __BRAND___INJECT_H
  
  #include <string>
  
@@ -211,46 +211,46 @@ index c161797..6a32eb3 100644
  bool check_and_inject(std::string const& app_name);
  
 -#endif  // ZYGISKFRIDA_INJECT_H
-+#endif  // quymh_INJECT_H
++#endif  // __BRAND___INJECT_H
 diff --git a/module/src/jni/log.h b/module/src/jni/log.h
-index 4af9b17..cb88e4c 100644
+index 4af9b17..8e00c55 100644
 --- a/module/src/jni/log.h
 +++ b/module/src/jni/log.h
 @@ -1,12 +1,12 @@
 -#ifndef ZYGISKFRIDA_LOG_H
 -#define ZYGISKFRIDA_LOG_H
-+#ifndef quymh_LOG_H
-+#define quymh_LOG_H
++#ifndef __BRAND___LOG_H
++#define __BRAND___LOG_H
  
  #include <android/log.h>
  
 -#define LOG_TAG "ZygiskFrida"
-+#define LOG_TAG "quymh"
++#define LOG_TAG "__BRAND__"
  #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
  #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
  #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
  #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
  
 -#endif  // ZYGISKFRIDA_LOG_H
-+#endif  // quymh_LOG_H
++#endif  // __BRAND___LOG_H
 diff --git a/module/src/jni/remapper.h b/module/src/jni/remapper.h
-index 5fd122e..05e7695 100644
+index 5fd122e..94cc306 100644
 --- a/module/src/jni/remapper.h
 +++ b/module/src/jni/remapper.h
 @@ -1,8 +1,8 @@
 -#ifndef ZYGISKFRIDA_REMAPPER_H
 -#define ZYGISKFRIDA_REMAPPER_H
-+#ifndef quymh_REMAPPER_H
-+#define quymh_REMAPPER_H
++#ifndef __BRAND___REMAPPER_H
++#define __BRAND___REMAPPER_H
  
  #include <string>
  
  void remap_lib(std::string lib_path);
  
 -#endif  // ZYGISKFRIDA_REMAPPER_H
-+#endif  // quymh_REMAPPER_H
++#endif  // __BRAND___REMAPPER_H
 diff --git a/template/magisk_module/customize.sh b/template/magisk_module/customize.sh
-index 53ded41..c7a1793 100644
+index 53ded41..df0156c 100644
 --- a/template/magisk_module/customize.sh
 +++ b/template/magisk_module/customize.sh
 @@ -3,12 +3,12 @@ SKIPUNZIP=1
@@ -258,23 +258,19 @@ index 53ded41..c7a1793 100644
  MODULE_ID=@MODULE_ID@
  
 -TMP_MODULE_DIR=/data/local/tmp/re.zyg.fri
-+TMP_MODULE_DIR=/data/local/tmp/quymh
++TMP_MODULE_DIR=/data/local/tmp/__BRAND__
  
  if [ "$FLAVOR" != "zygisk" ] && [ "$FLAVOR" != "riru" ]; then
 -  abort "! Unknown ZygiskFrida flavor: $FLAVOR"
-+  abort "! Unknown quymh flavor: $FLAVOR"
++  abort "! Unknown __BRAND__ flavor: $FLAVOR"
  else
 -  ui_print "- ZygiskFrida flavor: $FLAVOR"
-+  ui_print "- quymh flavor: $FLAVOR"
++  ui_print "- __BRAND__ flavor: $FLAVOR"
  fi
  
  if [ "$ARCH" != "arm" ] && [ "$ARCH" != "arm64" ] && [ "$ARCH" != "x86" ] && [ "$ARCH" != "x64" ]; then
-@@ -78,24 +78,24 @@ if [ "$IS64BIT" = true ]; then
-   [ "$FLAVOR" = "riru" ] && mv "$LIB64_DEST/$LIB64_NAME" "${LIB64_DEST}/lib${MODULE_ID}.so"
- fi
- 
--ui_print "- Extracting bundled frida gadget"
-+ui_print "- Extracting bundled gadget"
+@@ -81,21 +81,21 @@ fi
+ ui_print "- Extracting bundled frida gadget"
  
  mkdir -p "$TMP_MODULE_DIR"
 -extract "$ZIPFILE" "gadget/libgadget-$ARCH.so.xz" "$TMP_MODULE_DIR" true
@@ -282,11 +278,11 @@ index 53ded41..c7a1793 100644
 -rm "$TMP_MODULE_DIR/libgadget.so"
 -$BUSYBOX_BIN unxz "$TMP_MODULE_DIR/libgadget.so.xz"
 -rm "$TMP_MODULE_DIR/libgadget.so.xz"
-+extract "$ZIPFILE" "gadget/libquymhgadget-$ARCH.so.xz" "$TMP_MODULE_DIR" true
-+mv "$TMP_MODULE_DIR/libquymhgadget-$ARCH.so.xz" "$TMP_MODULE_DIR/libquymhgadget.so.xz"
-+rm "$TMP_MODULE_DIR/libquymhgadget.so"
-+$BUSYBOX_BIN unxz "$TMP_MODULE_DIR/libquymhgadget.so.xz"
-+rm "$TMP_MODULE_DIR/libquymhgadget.so.xz"
++extract "$ZIPFILE" "gadget/lib__BRAND__gadget-$ARCH.so.xz" "$TMP_MODULE_DIR" true
++mv "$TMP_MODULE_DIR/lib__BRAND__gadget-$ARCH.so.xz" "$TMP_MODULE_DIR/lib__BRAND__gadget.so.xz"
++rm "$TMP_MODULE_DIR/lib__BRAND__gadget.so"
++$BUSYBOX_BIN unxz "$TMP_MODULE_DIR/lib__BRAND__gadget.so.xz"
++rm "$TMP_MODULE_DIR/lib__BRAND__gadget.so.xz"
  
  if [ "$IS64BIT" = true ]; then
    ARCH32="arm"
@@ -297,18 +293,18 @@ index 53ded41..c7a1793 100644
 -  rm "$TMP_MODULE_DIR/libgadget32.so"
 -  $BUSYBOX_BIN unxz "$TMP_MODULE_DIR/libgadget32.so.xz"
 -  rm "$TMP_MODULE_DIR/libgadget32.so.xz"
-+  extract "$ZIPFILE" "gadget/libquymhgadget-$ARCH32.so.xz" "$TMP_MODULE_DIR" true
-+  mv "$TMP_MODULE_DIR/libquymhgadget-$ARCH32.so.xz" "$TMP_MODULE_DIR/libquymhgadget32.so.xz"
-+  rm "$TMP_MODULE_DIR/libquymhgadget32.so"
-+  $BUSYBOX_BIN unxz "$TMP_MODULE_DIR/libquymhgadget32.so.xz"
-+  rm "$TMP_MODULE_DIR/libquymhgadget32.so.xz"
++  extract "$ZIPFILE" "gadget/lib__BRAND__gadget-$ARCH32.so.xz" "$TMP_MODULE_DIR" true
++  mv "$TMP_MODULE_DIR/lib__BRAND__gadget-$ARCH32.so.xz" "$TMP_MODULE_DIR/lib__BRAND__gadget32.so.xz"
++  rm "$TMP_MODULE_DIR/lib__BRAND__gadget32.so"
++  $BUSYBOX_BIN unxz "$TMP_MODULE_DIR/lib__BRAND__gadget32.so.xz"
++  rm "$TMP_MODULE_DIR/lib__BRAND__gadget32.so.xz"
  fi
  
  extract "$ZIPFILE" "config.json.example" "$TMP_MODULE_DIR" true
 diff --git a/template/magisk_module/uninstall.sh b/template/magisk_module/uninstall.sh
-index 36ded92..978cd2c 100644
+index 36ded92..f48a3cf 100644
 --- a/template/magisk_module/uninstall.sh
 +++ b/template/magisk_module/uninstall.sh
 @@ -1 +1 @@
 -rm -rf /data/local/tmp/re.zyg.fri
-+rm -rf /data/local/tmp/quymh
++rm -rf /data/local/tmp/__BRAND__

@@ -48,7 +48,7 @@ index 81b8846..0f276a7 100644
 +    gadgetConfigured = true
  }
 diff --git a/module/build.gradle b/module/build.gradle
-index 7292f62..679e5e1 100644
+index 7292f62..c3b897d 100644
 --- a/module/build.gradle
 +++ b/module/build.gradle
 @@ -18,34 +18,20 @@ dependencies {
@@ -250,7 +250,7 @@ index 5fd122e..565a1d7 100644
 -#endif  // ZYGISKFRIDA_REMAPPER_H
 +#endif  // __brand___REMAPPER_H
 diff --git a/template/magisk_module/customize.sh b/template/magisk_module/customize.sh
-index 53ded41..77c54de 100644
+index 53ded41..27847af 100644
 --- a/template/magisk_module/customize.sh
 +++ b/template/magisk_module/customize.sh
 @@ -3,12 +3,12 @@ SKIPUNZIP=1
@@ -269,7 +269,7 @@ index 53ded41..77c54de 100644
  fi
  
  if [ "$ARCH" != "arm" ] && [ "$ARCH" != "arm64" ] && [ "$ARCH" != "x86" ] && [ "$ARCH" != "x64" ]; then
-@@ -81,21 +81,26 @@ fi
+@@ -81,21 +81,27 @@ fi
  ui_print "- Extracting bundled frida gadget"
  
  mkdir -p "$TMP_MODULE_DIR"
@@ -294,8 +294,9 @@ index 53ded41..77c54de 100644
 -  $BUSYBOX_BIN unxz "$TMP_MODULE_DIR/libgadget32.so.xz"
 -  rm "$TMP_MODULE_DIR/libgadget32.so.xz"
 +  # 尝试提取 32 位 gadget（可选）
-+  if unzip -l "$ZIPFILE" "gadget/lib__BRAND__gadget-$ARCH32.so.xz" > /dev/null 2>&1; then
-+    extract "$ZIPFILE" "gadget/lib__BRAND__gadget-$ARCH32.so.xz" "$TMP_MODULE_DIR" true
++  GADGET32_FILE="gadget/lib__BRAND__gadget-$ARCH32.so.xz"
++  if unzip -Z1 "$ZIPFILE" 2>/dev/null | grep -q "^$GADGET32_FILE$"; then
++    extract "$ZIPFILE" "$GADGET32_FILE" "$TMP_MODULE_DIR" true
 +    mv "$TMP_MODULE_DIR/lib__BRAND__gadget-$ARCH32.so.xz" "$TMP_MODULE_DIR/lib__BRAND__gadget32.so.xz"
 +    rm -f "$TMP_MODULE_DIR/lib__BRAND__gadget32.so"
 +    $BUSYBOX_BIN unxz "$TMP_MODULE_DIR/lib__BRAND__gadget32.so.xz"

@@ -100,31 +100,28 @@ jobs:
             echo "--- 验证 $ARCH ---"
             STAGING=dist-android/staging-$ARCH
 
-            # 1. 检查文件存在
-            echo "1. 检查文件存在..."
-            for f in "$STAGING/lib/gadget/${BRAND}-gadget.so"; do
-              if [ -f "$f" ]; then
-                echo "  ✓ $(basename $f) ($(du -h $f | cut -f1))"
-              else
-                echo "  ✗ $(basename $f) 不存在"
-                exit 1
-              fi
-            done
+            # 1. 检查 gadget 存在
+            echo "1. 检查 gadget 存在..."
+            BITS=$([ "$ARCH" = "arm" ] && echo 32 || echo 64)
+            GADGET=$(find "$STAGING/lib" -path "*/${BITS}/${BRAND}-gadget.so" 2>/dev/null | head -1)
+            if [ -n "$GADGET" ] && [ -f "$GADGET" ]; then
+              echo "  ✓ gadget ($(du -h "$GADGET" | cut -f1))"
+            else
+              echo "  ✗ gadget 不存在"
+              exit 1
+            fi
 
             # 2. 检查 ELF 架构
             echo ""
             echo "2. 检查 ELF 架构..."
-            GADGET="$STAGING/lib/gadget/${BRAND}-gadget.so"
-            if [ -f "$GADGET" ]; then
-              MACHINE=$(readelf -h "$GADGET" 2>/dev/null | grep "Machine:" | awk '{print $2, $3}')
-              if [ "$ARCH" = "arm64" ] && echo "$MACHINE" | grep -q "AArch64"; then
-                echo "  ✓ gadget: $MACHINE"
-              elif [ "$ARCH" = "arm" ] && echo "$MACHINE" | grep -q "ARM"; then
-                echo "  ✓ gadget: $MACHINE"
-              else
-                echo "  ✗ gadget: $MACHINE (架构不匹配)"
-                exit 1
-              fi
+            MACHINE=$(readelf -h "$GADGET" 2>/dev/null | grep "Machine:" | awk '{print $2, $3}')
+            if [ "$ARCH" = "arm64" ] && echo "$MACHINE" | grep -q "AArch64"; then
+              echo "  ✓ gadget: $MACHINE"
+            elif [ "$ARCH" = "arm" ] && echo "$MACHINE" | grep -q "ARM"; then
+              echo "  ✓ gadget: $MACHINE"
+            else
+              echo "  ✗ gadget: $MACHINE (架构不匹配)"
+              exit 1
             fi
 
             echo ""

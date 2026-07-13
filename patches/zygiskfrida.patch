@@ -88,7 +88,7 @@ index 7292f62..679e5e1 100644
  
  android {
 -    namespace = "zygisk.frida"
-+    namespace = "__BRAND__"
++    namespace = "__BRAND__.mod"
      compileSdkVersion rootProject.ext.targetSdkVersion
 -    ndkVersion '25.2.9519653'
 +    // ndkVersion - use whatever NDK is available

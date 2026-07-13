@@ -160,10 +160,11 @@ jobs:
             fi
 
             # Package gadget
-            GADGET=$(find "$STAGING/lib" -name "${BRAND}-gadget.so" | head -1)
+            BITS=$([ "$ARCH" = "arm" ] && echo 32 || echo 64)
+            GADGET=$(find "$STAGING/lib" -path "*/${BITS}/${BRAND}-gadget.so" 2>/dev/null | head -1)
             if [ -n "$GADGET" ] && [ -f "$GADGET" ]; then
               xz -c -T0 "$GADGET" > "$OUTPUT/${BRAND}-gadget-${VERSION}-android-${ARCH}.so.xz"
-              echo "  ✓ gadget"
+              echo "  ✓ gadget ($BITS-bit)"
             fi
           done
 

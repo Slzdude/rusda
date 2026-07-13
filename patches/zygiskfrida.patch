@@ -250,7 +250,7 @@ index 5fd122e..565a1d7 100644
 -#endif  // ZYGISKFRIDA_REMAPPER_H
 +#endif  // __brand___REMAPPER_H
 diff --git a/template/magisk_module/customize.sh b/template/magisk_module/customize.sh
-index 53ded41..27847af 100644
+index 53ded41..4eb9a98 100644
 --- a/template/magisk_module/customize.sh
 +++ b/template/magisk_module/customize.sh
 @@ -3,12 +3,12 @@ SKIPUNZIP=1
@@ -294,10 +294,10 @@ index 53ded41..27847af 100644
 -  $BUSYBOX_BIN unxz "$TMP_MODULE_DIR/libgadget32.so.xz"
 -  rm "$TMP_MODULE_DIR/libgadget32.so.xz"
 +  # 尝试提取 32 位 gadget（可选）
-+  GADGET32_FILE="gadget/lib__BRAND__gadget-$ARCH32.so.xz"
-+  if unzip -Z1 "$ZIPFILE" 2>/dev/null | grep -q "^$GADGET32_FILE$"; then
-+    extract "$ZIPFILE" "$GADGET32_FILE" "$TMP_MODULE_DIR" true
-+    mv "$TMP_MODULE_DIR/lib__BRAND__gadget-$ARCH32.so.xz" "$TMP_MODULE_DIR/lib__BRAND__gadget32.so.xz"
++  GADGET32_FILE="lib__BRAND__gadget-$ARCH32.so.xz"
++  if unzip -l "$ZIPFILE" 2>/dev/null | grep -q "$GADGET32_FILE"; then
++    extract "$ZIPFILE" "gadget/$GADGET32_FILE" "$TMP_MODULE_DIR" true
++    mv "$TMP_MODULE_DIR/$GADGET32_FILE" "$TMP_MODULE_DIR/lib__BRAND__gadget32.so.xz"
 +    rm -f "$TMP_MODULE_DIR/lib__BRAND__gadget32.so"
 +    $BUSYBOX_BIN unxz "$TMP_MODULE_DIR/lib__BRAND__gadget32.so.xz"
 +    rm -f "$TMP_MODULE_DIR/lib__BRAND__gadget32.so.xz"

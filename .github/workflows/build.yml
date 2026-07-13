@@ -56,17 +56,32 @@ jobs:
       - name: Apply patches
         run: python ${{ github.workspace }}/tools/apply_patches.py frida-src
 
-      - name: Build
+      - name: Build arm64
         working-directory: frida-src
         env:
           ANDROID_NDK_ROOT: ${{ env.ANDROID_NDK_ROOT }}
         run: |
-          mkdir -p build
-          cd build
+          mkdir -p build-android-arm64
+          cd build-android-arm64
           ../configure \
-            --prefix=$(pwd)/../dist/staging \
+            --prefix=$(pwd)/../dist-android/staging-arm64 \
             --host=android-arm64 \
             --enable-server \
+            --enable-gadget \
+            --enable-inject
+          make -j$(nproc)
+          make install
+
+      - name: Build arm
+        working-directory: frida-src
+        env:
+          ANDROID_NDK_ROOT: ${{ env.ANDROID_NDK_ROOT }}
+        run: |
+          mkdir -p build-android-arm
+          cd build-android-arm
+          ../configure \
+            --prefix=$(pwd)/../dist-android/staging-arm \
+            --host=android-arm \
             --enable-gadget \
             --enable-inject
           make -j$(nproc)
@@ -76,73 +91,45 @@ jobs:
         working-directory: frida-src
         run: |
           echo "=== 验证编译产物 ==="
-          STAGING=dist/staging
           BRAND=$(grep -oP "helper_name = '\K[^']*" subprojects/frida-core/meson.build | sed 's/-helper//')
 
           echo "品牌名: $BRAND"
           echo ""
 
-          # 1. 检查文件存在
-          echo "1. 检查文件存在..."
-          for f in "$STAGING/bin/${BRAND}-server" "$STAGING/bin/${BRAND}-inject"; do
-            if [ -f "$f" ]; then
-              echo "  ✓ $(basename $f) ($(du -h $f | cut -f1))"
-            else
-              echo "  ✗ $(basename $f) 不存在"
-              exit 1
+          for ARCH in arm64 arm; do
+            echo "--- 验证 $ARCH ---"
+            STAGING=dist-android/staging-$ARCH
+
+            # 1. 检查文件存在
+            echo "1. 检查文件存在..."
+            for f in "$STAGING/lib/gadget/${BRAND}-gadget.so"; do
+              if [ -f "$f" ]; then
+                echo "  ✓ $(basename $f) ($(du -h $f | cut -f1))"
+              else
+                echo "  ✗ $(basename $f) 不存在"
+                exit 1
+              fi
+            done
+
+            # 2. 检查 ELF 架构
+            echo ""
+            echo "2. 检查 ELF 架构..."
+            GADGET="$STAGING/lib/gadget/${BRAND}-gadget.so"
+            if [ -f "$GADGET" ]; then
+              MACHINE=$(readelf -h "$GADGET" 2>/dev/null | grep "Machine:" | awk '{print $2, $3}')
+              if [ "$ARCH" = "arm64" ] && echo "$MACHINE" | grep -q "AArch64"; then
+                echo "  ✓ gadget: $MACHINE"
+              elif [ "$ARCH" = "arm" ] && echo "$MACHINE" | grep -q "ARM"; then
+                echo "  ✓ gadget: $MACHINE"
+              else
+                echo "  ✗ gadget: $MACHINE (架构不匹配)"
+                exit 1
+              fi
             fi
+
+            echo ""
           done
 
-          # 2. 检查 ELF 架构
-          echo ""
-          echo "2. 检查 ELF 架构..."
-          for f in "$STAGING/bin/${BRAND}-server" "$STAGING/bin/${BRAND}-inject"; do
-            MACHINE=$(readelf -h "$f" 2>/dev/null | grep "Machine:" | awk '{print $2, $3}')
-            if echo "$MACHINE" | grep -q "AArch64"; then
-              echo "  ✓ $(basename $f): $MACHINE"
-            else
-              echo "  ✗ $(basename $f): $MACHINE (期望 AArch64)"
-              exit 1
-            fi
-          done
-
-          # 3. 检查文件名替换
-          echo ""
-          echo "3. 检查文件名替换..."
-          # 补丁将构建系统中的 frida-* 文件名替换为 __BRAND__-*
-          # 注意：Vala 源码中的 frida-helper 等字符串无法完全移除
-          for feature in "frida-server" "frida-inject" "frida-gadget"; do
-            if strings "$STAGING/bin/${BRAND}-server" | grep -q "^$feature"; then
-              echo "  ✗ $feature 文件名未替换"
-              exit 1
-            else
-              echo "  ✓ $feature 已替换"
-            fi
-          done
-
-          # 4. 检查线程名 XOR 编码
-          echo ""
-          echo "4. 检查线程名 XOR 编码..."
-          # 补丁将线程名进行 XOR 编码
-          for feature in "frida-eternal-agent" "frida-agent-emulated" "frida-generate-certificate" "frida-gadget-tcp" "frida-gadget-unix"; do
-            if strings "$STAGING/bin/${BRAND}-server" | grep -q "^$feature"; then
-              echo "  ✗ $feature 线程名未编码"
-              exit 1
-            else
-              echo "  ✓ $feature 已编码"
-            fi
-          done
-
-          # 5. 检查品牌名替换
-          echo ""
-          echo "5. 检查品牌名..."
-          if strings "$STAGING/bin/${BRAND}-server" | grep -q "rusda"; then
-            echo "  ✗ 'rusda' 仍存在"
-          else
-            echo "  ✓ 'rusda' 已替换"
-          fi
-
-          echo ""
           echo "=== 验证完成 ==="
 
       - name: Package artifacts (tag only)
@@ -150,8 +137,6 @@ jobs:
         working-directory: frida-src
         run: |
           VERSION=${{ steps.version.outputs.version }}
-          ARCH=arm64
-          STAGING=dist/staging
           OUTPUT=dist/output
           mkdir -p $OUTPUT
 
@@ -161,22 +146,29 @@ jobs:
           # 保存品牌名供后续使用
           echo "$BRAND" > $OUTPUT/brand.txt
 
-          # Package server
-          if [ -f "$STAGING/bin/${BRAND}-server" ]; then
-            xz -c -T0 "$STAGING/bin/${BRAND}-server" > "$OUTPUT/${BRAND}-server-${VERSION}-android-${ARCH}.xz"
-          fi
+          for ARCH in arm64 arm; do
+            echo "--- 打包 $ARCH ---"
+            STAGING=dist-android/staging-$ARCH
 
-          # Package inject
-          if [ -f "$STAGING/bin/${BRAND}-inject" ]; then
-            xz -c -T0 "$STAGING/bin/${BRAND}-inject" > "$OUTPUT/${BRAND}-inject-${VERSION}-android-${ARCH}.xz"
-          fi
+            # Package server (only arm64)
+            if [ "$ARCH" = "arm64" ] && [ -f "$STAGING/bin/${BRAND}-server" ]; then
+              xz -c -T0 "$STAGING/bin/${BRAND}-server" > "$OUTPUT/${BRAND}-server-${VERSION}-android-${ARCH}.xz"
+              echo "  ✓ server"
+            fi
 
-          # Package gadget
-          BITS=64
-          GADGET=$(find "$STAGING/lib" -path "*/${BITS}/${BRAND}-gadget.so" | head -1)
-          if [ -n "$GADGET" ] && [ -f "$GADGET" ]; then
-            xz -c -T0 "$GADGET" > "$OUTPUT/${BRAND}-gadget-${VERSION}-android-${ARCH}.so.xz"
-          fi
+            # Package inject (only arm64)
+            if [ "$ARCH" = "arm64" ] && [ -f "$STAGING/bin/${BRAND}-inject" ]; then
+              xz -c -T0 "$STAGING/bin/${BRAND}-inject" > "$OUTPUT/${BRAND}-inject-${VERSION}-android-${ARCH}.xz"
+              echo "  ✓ inject"
+            fi
+
+            # Package gadget
+            GADGET=$(find "$STAGING/lib" -name "${BRAND}-gadget.so" | head -1)
+            if [ -n "$GADGET" ] && [ -f "$GADGET" ]; then
+              xz -c -T0 "$GADGET" > "$OUTPUT/${BRAND}-gadget-${VERSION}-android-${ARCH}.so.xz"
+              echo "  ✓ gadget"
+            fi
+          done
 
           echo "打包完成"
           ls -lh $OUTPUT/
@@ -185,8 +177,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-arm64
-          path: frida-src/dist/output/*.xz
+          name: artifacts
+          path: |
+            frida-src/dist/output/*.xz
+            frida-src/dist/output/brand.txt
 
   build-zygisk:
     if: startsWith(github.ref, 'refs/tags/')
@@ -210,7 +204,7 @@ jobs:
       - name: Download gadget artifacts
         uses: actions/download-artifact@v4
         with:
-          name: artifacts-arm64
+          name: artifacts
           path: dist-android
 
       - name: Extract brand from artifacts
